@@ -5,27 +5,27 @@
 @tailwind utilities;
 
 :root {
-  /* Frutiger Aero Palette */
-  --background: 204 100% 72%;     /* Light Blue Sky */
-  --foreground: 210 50% 20%;      /* Dark Navy text */
-  --primary: 200 100% 50%;        /* Cyan/Blue */
+  /* Lime Green Glossy Palette */
+  --background: 90 100% 50%;       /* Lime Green */
+  --foreground: 120 50% 15%;       /* Dark Green text */
+  --primary: 90 100% 45%;          /* Lime Green Primary */
   --primary-foreground: 0 0% 100%;
   --card: 0 0% 100%;
-  --card-foreground: 210 50% 20%;
+  --card-foreground: 120 50% 20%;
   --popover: 0 0% 100%;
-  --popover-foreground: 210 50% 20%;
-  --secondary: 190 60% 95%;
-  --secondary-foreground: 200 100% 40%;
-  --muted: 200 30% 96%;
-  --muted-foreground: 200 20% 50%;
-  --accent: 150 80% 45%;          /* Green accent (like Windows XP start button) */
+  --popover-foreground: 120 50% 20%;
+  --secondary: 90 60% 95%;
+  --secondary-foreground: 90 100% 35%;
+  --muted: 90 30% 96%;
+  --muted-foreground: 90 20% 40%;
+  --accent: 90 100% 50%;           /* Lime accent */
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 200 60% 90%;
-  --input: 200 40% 96%;
-  --ring: 200 100% 50%;
-  --radius: 1.5rem; /* Very rounded corners */
+  --border: 90 60% 85%;
+  --input: 90 40% 96%;
+  --ring: 90 100% 50%;
+  --radius: 1.5rem;
 
   /* Custom Font Variables */
   --font-display: 'Varela Round', sans-serif;
@@ -36,8 +36,8 @@
   body {
     @apply antialiased text-foreground;
     font-family: var(--font-body);
-    /* The classic Frutiger Aero sky gradient */
-    background: linear-gradient(180deg, #6ec6ff 0%, #ccefff 100%);
+    /* Lime Green Glossy Gradient */
+    background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -52,7 +52,7 @@
   .glass-panel {
     @apply bg-white/40 backdrop-blur-md border border-white/60 shadow-xl;
     box-shadow: 
-      0 8px 32px 0 rgba(31, 38, 135, 0.15),
+      0 8px 32px 0 rgba(31, 135, 60, 0.15),
       inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
 
@@ -60,27 +60,40 @@
     text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
   }
   
+  /* Lime Green Glossy Button */
   .glossy-button {
-    background: linear-gradient(180deg, #ffffff 0%, #e6f7ff 49%, #b3e6ff 51%, #ccefff 100%);
+    background: linear-gradient(180deg, #e8ffd1 0%, #b4f03b 49%, #7de000 51%, #a8e063 100%);
     box-shadow: 
-      0 4px 6px rgba(0,0,0,0.1),
+      0 4px 6px rgba(0,0,0,0.15),
+      0 8px 20px rgba(125, 224, 0, 0.3),
       inset 0 1px 0 rgba(255,255,255,0.8),
-      inset 0 -1px 0 rgba(0,0,0,0.05);
+      inset 0 -1px 0 rgba(0,0,0,0.1);
+    border: 2px solid rgba(255, 255, 255, 0.5);
   }
   
   .glossy-button:hover {
-    background: linear-gradient(180deg, #ffffff 0%, #f0faff 49%, #ccefff 51%, #e6f7ff 100%);
+    background: linear-gradient(180deg, #f0ffe0 0%, #c5ff50 49%, #90f020 51%, #b4f03b 100%);
     box-shadow: 
-      0 6px 12px rgba(0,100,255,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.8);
-    transform: translateY(-1px);
+      0 6px 12px rgba(100,200,0,0.3),
+      0 12px 30px rgba(125, 224, 0, 0.4),
+      inset 0 1px 0 rgba(255,255,255,0.9);
+    transform: translateY(-2px);
   }
 
   .glossy-button:active {
-    background: linear-gradient(180deg, #ccefff 0%, #b3e6ff 100%);
+    background: linear-gradient(180deg, #a8e063 0%, #7de000 100%);
     box-shadow: 
-      0 2px 4px rgba(0,0,0,0.1),
-      inset 0 2px 4px rgba(0,0,0,0.05);
+      0 2px 4px rgba(0,0,0,0.15),
+      inset 0 2px 4px rgba(0,0,0,0.1);
     transform: translateY(1px);
+  }
+
+  /* Glossy Pipe Style */
+  .glossy-pipe {
+    background: linear-gradient(90deg, #4a8c2a 0%, #6abf40 30%, #8cd660 50%, #6abf40 70%, #4a8c2a 100%);
+    box-shadow: 
+      inset 2px 0 6px rgba(255,255,255,0.4),
+      inset -2px 0 6px rgba(0,0,0,0.2),
+      2px 0 8px rgba(0,0,0,0.3);
   }
 }
