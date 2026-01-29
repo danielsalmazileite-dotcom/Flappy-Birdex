@@ -175,12 +175,21 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       handleJump();
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" || e.code === "ArrowUp") {
+        e.preventDefault();
+        handleJump();
+      }
+    };
+
     canvas.addEventListener("touchstart", handleTouch, { passive: false });
     canvas.addEventListener("mousedown", handleClick);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       canvas.removeEventListener("touchstart", handleTouch);
       canvas.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleJump]);
 
