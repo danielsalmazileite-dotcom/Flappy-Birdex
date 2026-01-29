@@ -1,13 +1,19 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { RotateCcw, Play, Settings } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { RotateCcw, Play, Settings, ChevronLeft, ChevronRight, Lock, Flame } from "lucide-react";
 import { GlossyButton } from "./GlossyButton";
+import { 
+  CharacterType, 
+  CHARACTERS, 
+  getPlayerStats, 
+  addFlaps, 
+  updateBestScore,
+  PlayerStats 
+} from "@/lib/playerStats";
 
 interface GameCanvasProps {
   onExit: () => void;
 }
-
-type CharacterType = "bird" | "soccer" | "baseball" | "tennis";
 
 interface Pipe {
   x: number;
@@ -25,10 +31,14 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   const [score, setScore] = useState(0);
   const [character, setCharacter] = useState<CharacterType>("bird");
   const [canvasSize, setCanvasSize] = useState({ width: 360, height: 640 });
+  const [isHardcore, setIsHardcore] = useState(false);
+  const [characterPage, setCharacterPage] = useState(1);
+  const [playerStats, setPlayerStats] = useState<PlayerStats>(getPlayerStats());
+  const [sessionFlaps, setSessionFlaps] = useState(0);
+  const fireAnimationRef = useRef(0);
 
   const PIPE_WIDTH = 60;
   const PIPE_GAP = 150;
-  const PIPE_SPEED = 3;
   const BIRD_RADIUS = 18;
 
   const gameState = useRef({
@@ -39,17 +49,17 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     isGameRunning: false,
     pipes: [] as Pipe[],
     frameCount: 0,
-    score: 0
+    score: 0,
+    pipeSpeed: 3,
+    flapsThisGame: 0
   });
 
   const requestRef = useRef<number>();
 
-  // Resize canvas to fit screen
   useEffect(() => {
     const updateSize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      // Keep aspect ratio close to 9:16 for mobile feel
       const aspectRatio = 9 / 16;
       let canvasWidth = width;
       let canvasHeight = height;
@@ -69,7 +79,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // Load background image
   useEffect(() => {
     const img = new Image();
     img.src = "/images/game-background.jpeg";
@@ -78,30 +87,43 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     };
   }, []);
 
-  const resetGame = () => {
+  const startGame = (hardcoreMode: boolean) => {
+    setIsHardcore(hardcoreMode);
+    const speed = hardcoreMode ? 5 : 3;
     gameState.current = {
       birdY: canvasSize.height / 2,
       velocity: 0,
-      gravity: 0.4,
-      jumpStrength: -6,
+      gravity: hardcoreMode ? 0.5 : 0.4,
+      jumpStrength: hardcoreMode ? -7 : -6,
       isGameRunning: true,
       pipes: [],
       frameCount: 0,
-      score: 0
+      score: 0,
+      pipeSpeed: speed,
+      flapsThisGame: 0
     };
     setIsGameOver(false);
     setIsPlaying(true);
     setScore(0);
     setShowCharacterSelect(false);
+    setSessionFlaps(0);
+  };
+
+  const endGame = () => {
+    // Save stats
+    addFlaps(gameState.current.flapsThisGame);
+    updateBestScore(gameState.current.score, isHardcore);
+    setPlayerStats(getPlayerStats());
   };
 
   const handleJump = useCallback(() => {
     if (gameState.current.isGameRunning) {
       gameState.current.velocity = gameState.current.jumpStrength;
+      gameState.current.flapsThisGame++;
+      setSessionFlaps(prev => prev + 1);
     }
   }, []);
 
-  // Touch/click handler with zero delay
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -173,7 +195,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     }
   }, []);
 
-  const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, y: number, type: CharacterType) => {
+  const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, y: number, type: CharacterType, frame: number) => {
     const x = canvasSize.width * 0.25;
     ctx.save();
     
@@ -219,76 +241,176 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineTo(x + 14, y + 10);
       ctx.fillStyle = "#ff5722";
       ctx.fill();
+    } else if (type === "birdglasses") {
+      // Bird with sunglasses
+      const birdGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      birdGradient.addColorStop(0, "#fff8b3");
+      birdGradient.addColorStop(0.3, "#ffeb3b");
+      birdGradient.addColorStop(0.7, "#ffc107");
+      birdGradient.addColorStop(1, "#ff9800");
+      
+      ctx.beginPath();
+      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = birdGradient;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = "rgba(255,200,0,0.5)";
+      ctx.fill();
+      ctx.strokeStyle = "#e65100";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.ellipse(x - 5, y - 8, 8, 5, -0.3, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+      // Sunglasses
+      ctx.fillStyle = "#1a1a1a";
+      ctx.beginPath();
+      ctx.roundRect(x + 2, y - 10, 14, 10, 2);
+      ctx.fill();
+      ctx.fillStyle = "#333";
+      ctx.beginPath();
+      ctx.roundRect(x + 4, y - 8, 10, 6, 1);
+      ctx.fill();
+      // Lens shine
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.beginPath();
+      ctx.ellipse(x + 7, y - 6, 2, 1.5, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      // Arm
+      ctx.strokeStyle = "#1a1a1a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y - 5);
+      ctx.lineTo(x - 8, y - 3);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(x + 14, y + 2);
+      ctx.lineTo(x + 26, y + 5);
+      ctx.lineTo(x + 14, y + 10);
+      ctx.fillStyle = "#ff5722";
+      ctx.fill();
     } else if (type === "soccer") {
-      const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      // Improved soccer ball with proper pentagon pattern
+      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
-      ballGradient.addColorStop(0.7, "#e0e0e0");
-      ballGradient.addColorStop(1, "#bdbdbd");
+      ballGradient.addColorStop(0.5, "#f5f5f5");
+      ballGradient.addColorStop(0.8, "#e0e0e0");
+      ballGradient.addColorStop(1, "#c0c0c0");
       
       ctx.beginPath();
       ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = ballGradient;
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 15;
       ctx.shadowColor = "rgba(0,0,0,0.4)";
       ctx.fill();
-      ctx.strokeStyle = "#424242";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       
-      ctx.fillStyle = "#212121";
-      const angles = [0, 72, 144, 216, 288];
-      angles.forEach((angle) => {
-        const rad = (angle * Math.PI) / 180;
-        const px = x + Math.cos(rad) * 10;
-        const py = y + Math.sin(rad) * 10;
-        ctx.beginPath();
-        ctx.arc(px, py, 4, 0, Math.PI * 2);
-        ctx.fill();
-      });
+      ctx.shadowBlur = 0;
+      // Center pentagon
+      ctx.fillStyle = "#1a1a1a";
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 72 - 90) * Math.PI / 180;
+        const px = x + Math.cos(angle) * 6;
+        const py = y + Math.sin(angle) * 6;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
       ctx.fill();
       
-      ctx.shadowBlur = 0;
+      // Outer pentagons
+      const outerAngles = [0, 72, 144, 216, 288];
+      outerAngles.forEach((angle) => {
+        const rad = (angle - 90) * Math.PI / 180;
+        const cx = x + Math.cos(rad) * 13;
+        const cy = y + Math.sin(rad) * 13;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a = ((i * 72) + angle) * Math.PI / 180;
+          const px = cx + Math.cos(a) * 4;
+          const py = cy + Math.sin(a) * 4;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+      });
+      
+      // Glossy highlight
       ctx.beginPath();
-      ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(x - 7, y - 10, 7, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.fill();
     } else if (type === "baseball") {
-      const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      // Improved baseball with better stitching
+      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
-      ballGradient.addColorStop(0.6, "#f5f5f5");
-      ballGradient.addColorStop(1, "#e8e8e8");
+      ballGradient.addColorStop(0.4, "#faf8f5");
+      ballGradient.addColorStop(0.8, "#f0ebe3");
+      ballGradient.addColorStop(1, "#e5ddd0");
       
       ctx.beginPath();
       ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = ballGradient;
       ctx.shadowBlur = 12;
-      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowColor = "rgba(0,0,0,0.35)";
       ctx.fill();
-      ctx.strokeStyle = "#bdbdbd";
+      ctx.strokeStyle = "#c9b99a";
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      ctx.strokeStyle = "#c62828";
+      ctx.shadowBlur = 0;
+      // Left stitching curve
+      ctx.strokeStyle = "#c41e3a";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x - 10, y, 12, -0.8, 0.8);
+      ctx.arc(x - 12, y, 14, -0.7, 0.7);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x + 10, y, 12, Math.PI - 0.8, Math.PI + 0.8);
-      ctx.stroke();
+      // Left stitch marks
+      for (let i = -3; i <= 3; i++) {
+        const angle = i * 0.18;
+        const cx = x - 12 + Math.cos(angle) * 14;
+        const cy = y + Math.sin(angle) * 14;
+        ctx.beginPath();
+        ctx.moveTo(cx - 2, cy - 1);
+        ctx.lineTo(cx + 2, cy + 1);
+        ctx.stroke();
+      }
       
-      ctx.shadowBlur = 0;
+      // Right stitching curve
+      ctx.beginPath();
+      ctx.arc(x + 12, y, 14, Math.PI - 0.7, Math.PI + 0.7);
+      ctx.stroke();
+      // Right stitch marks
+      for (let i = -3; i <= 3; i++) {
+        const angle = Math.PI + i * 0.18;
+        const cx = x + 12 + Math.cos(angle) * 14;
+        const cy = y + Math.sin(angle) * 14;
+        ctx.beginPath();
+        ctx.moveTo(cx - 2, cy - 1);
+        ctx.lineTo(cx + 2, cy + 1);
+        ctx.stroke();
+      }
+      
+      // Glossy highlight
       ctx.beginPath();
       ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
       ctx.fill();
     } else if (type === "tennis") {
+      // Improved tennis ball with fuzzy texture
       const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#e8ff59");
-      ballGradient.addColorStop(0.5, "#c6dc00");
-      ballGradient.addColorStop(1, "#9eb700");
+      ballGradient.addColorStop(0.4, "#d4f034");
+      ballGradient.addColorStop(0.7, "#c6dc00");
+      ballGradient.addColorStop(1, "#a8c000");
       
       ctx.beginPath();
       ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
@@ -296,23 +418,192 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(200,220,0,0.5)";
       ctx.fill();
-      ctx.strokeStyle = "#7c8c00";
+      ctx.strokeStyle = "#8a9c00";
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      ctx.strokeStyle = "rgba(255,255,255,0.8)";
+      ctx.shadowBlur = 0;
+      // Curved white lines
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.lineWidth = 3;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.arc(x - 14, y, 18, -0.6, 0.6);
+      ctx.arc(x - 16, y, 20, -0.5, 0.5);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(x + 14, y, 18, Math.PI - 0.6, Math.PI + 0.6);
+      ctx.arc(x + 16, y, 20, Math.PI - 0.5, Math.PI + 0.5);
+      ctx.stroke();
+      
+      // Fuzzy texture dots
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (BIRD_RADIUS - 2);
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,200,0.4)";
+        ctx.fill();
+      }
+      
+      // Glossy highlight
+      ctx.beginPath();
+      ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fill();
+    } else if (type === "fireball") {
+      // Animated fireball
+      const pulseScale = 1 + Math.sin(frame * 0.15) * 0.1;
+      const flameOffset = Math.sin(frame * 0.2) * 2;
+      
+      // Outer flame glow
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = "rgba(255,100,0,0.8)";
+      
+      // Core
+      const coreGradient = ctx.createRadialGradient(x, y, 0, x, y, BIRD_RADIUS * pulseScale);
+      coreGradient.addColorStop(0, "#ffffff");
+      coreGradient.addColorStop(0.2, "#ffff80");
+      coreGradient.addColorStop(0.5, "#ffaa00");
+      coreGradient.addColorStop(0.8, "#ff5500");
+      coreGradient.addColorStop(1, "#cc2200");
+      
+      ctx.beginPath();
+      ctx.arc(x, y, BIRD_RADIUS * pulseScale, 0, Math.PI * 2);
+      ctx.fillStyle = coreGradient;
+      ctx.fill();
+      
+      ctx.shadowBlur = 0;
+      
+      // Flame tongues
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * 60 + frame * 3) * Math.PI / 180;
+        const length = 8 + Math.sin(frame * 0.3 + i) * 4;
+        const fx = x + Math.cos(angle) * BIRD_RADIUS;
+        const fy = y + Math.sin(angle) * BIRD_RADIUS;
+        
+        const flameGradient = ctx.createLinearGradient(x, y, fx + Math.cos(angle) * length, fy + Math.sin(angle) * length);
+        flameGradient.addColorStop(0, "#ffaa00");
+        flameGradient.addColorStop(0.5, "#ff5500");
+        flameGradient.addColorStop(1, "rgba(200,0,0,0)");
+        
+        ctx.beginPath();
+        ctx.moveTo(fx - Math.sin(angle) * 4, fy + Math.cos(angle) * 4);
+        ctx.lineTo(fx + Math.cos(angle) * length + flameOffset, fy + Math.sin(angle) * length);
+        ctx.lineTo(fx + Math.sin(angle) * 4, fy - Math.cos(angle) * 4);
+        ctx.fillStyle = flameGradient;
+        ctx.fill();
+      }
+      
+      // Inner glow
+      ctx.beginPath();
+      ctx.arc(x - 3, y - 5, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fill();
+    } else if (type === "smiley") {
+      // Smiley face
+      const smileyGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      smileyGradient.addColorStop(0, "#fff44f");
+      smileyGradient.addColorStop(0.5, "#ffeb3b");
+      smileyGradient.addColorStop(1, "#ffc107");
+      
+      ctx.beginPath();
+      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = smileyGradient;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = "rgba(255,200,0,0.5)";
+      ctx.fill();
+      ctx.strokeStyle = "#e6a800";
+      ctx.lineWidth = 2;
       ctx.stroke();
       
       ctx.shadowBlur = 0;
+      
+      // Eyes
+      ctx.fillStyle = "#1a1a1a";
       ctx.beginPath();
-      ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.ellipse(x - 6, y - 4, 3, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + 6, y - 4, 3, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Eye shine
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(x - 5, y - 5, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + 7, y - 5, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Smile
+      ctx.strokeStyle = "#1a1a1a";
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(x, y + 2, 10, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+      
+      // Cheeks
+      ctx.fillStyle = "rgba(255,150,150,0.4)";
+      ctx.beginPath();
+      ctx.ellipse(x - 12, y + 2, 4, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + 12, y + 2, 4, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Glossy highlight
+      ctx.beginPath();
+      ctx.ellipse(x - 6, y - 12, 6, 3, -0.3, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.fill();
+    } else if (type === "golf") {
+      // Golf ball with dimples
+      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
+      ballGradient.addColorStop(0, "#ffffff");
+      ballGradient.addColorStop(0.5, "#f8f8f8");
+      ballGradient.addColorStop(0.8, "#e8e8e8");
+      ballGradient.addColorStop(1, "#d0d0d0");
+      
+      ctx.beginPath();
+      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = ballGradient;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = "rgba(0,0,0,0.35)";
+      ctx.fill();
+      ctx.strokeStyle = "#b0b0b0";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.shadowBlur = 0;
+      
+      // Dimples pattern
+      const dimplePositions = [
+        [0, 0], [8, 0], [-8, 0], [4, 7], [-4, 7], [4, -7], [-4, -7],
+        [10, 5], [-10, 5], [10, -5], [-10, -5], [0, 10], [0, -10],
+        [6, -10], [-6, -10], [6, 10], [-6, 10]
+      ];
+      
+      dimplePositions.forEach(([dx, dy]) => {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < BIRD_RADIUS - 3) {
+          // Dimple shadow
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(0,0,0,0.08)";
+          ctx.fill();
+          // Dimple highlight
+          ctx.beginPath();
+          ctx.arc(x + dx - 0.5, y + dy - 0.5, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255,255,255,0.3)";
+          ctx.fill();
+        }
+      });
+      
+      // Main glossy highlight
+      ctx.beginPath();
+      ctx.ellipse(x - 7, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
       ctx.fill();
     }
     
@@ -326,6 +617,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    fireAnimationRef.current++;
 
     if (backgroundImageRef.current) {
       ctx.drawImage(backgroundImageRef.current, 0, 0, canvas.width, canvas.height);
@@ -345,14 +637,14 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       gameState.current.birdY += gameState.current.velocity;
 
       gameState.current.frameCount++;
-      if (gameState.current.frameCount % 100 === 0) {
+      if (gameState.current.frameCount % (isHardcore ? 70 : 100) === 0) {
         const gapY = 150 + Math.random() * (canvas.height - 350);
         gameState.current.pipes.push({ x: canvas.width, gapY, passed: false });
       }
 
       gameState.current.pipes = gameState.current.pipes.filter(pipe => pipe.x > -PIPE_WIDTH);
       gameState.current.pipes.forEach(pipe => {
-        pipe.x -= PIPE_SPEED;
+        pipe.x -= gameState.current.pipeSpeed;
 
         if (!pipe.passed && pipe.x + PIPE_WIDTH < birdX) {
           pipe.passed = true;
@@ -368,6 +660,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         if (birdRight > pipe.x && birdLeft < pipe.x + PIPE_WIDTH) {
           if (birdTop < pipe.gapY - PIPE_GAP / 2 || birdBottom > pipe.gapY + PIPE_GAP / 2) {
             gameState.current.isGameRunning = false;
+            endGame();
             setIsGameOver(true);
             setIsPlaying(false);
           }
@@ -376,6 +669,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
       if (gameState.current.birdY + BIRD_RADIUS > canvas.height || gameState.current.birdY - BIRD_RADIUS < 0) {
         gameState.current.isGameRunning = false;
+        endGame();
         setIsGameOver(true);
         setIsPlaying(false);
       }
@@ -386,10 +680,10 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       drawGlossyPipe(ctx, pipe.x, pipe.gapY + PIPE_GAP / 2, PIPE_WIDTH, canvas.height - (pipe.gapY + PIPE_GAP / 2), false);
     });
 
-    drawCharacter(ctx, gameState.current.birdY, character);
+    drawCharacter(ctx, gameState.current.birdY, character, fireAnimationRef.current);
 
     requestRef.current = requestAnimationFrame(loop);
-  }, [character, canvasSize, drawGlossyPipe, drawCharacter]);
+  }, [character, canvasSize, drawGlossyPipe, drawCharacter, isHardcore]);
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(loop);
@@ -398,12 +692,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     };
   }, [loop]);
 
-  const characterOptions: { type: CharacterType; label: string }[] = [
-    { type: "bird", label: "Passarinho" },
-    { type: "soccer", label: "Futebol" },
-    { type: "baseball", label: "Baseball" },
-    { type: "tennis", label: "Tennis" },
-  ];
+  const currentPageCharacters = CHARACTERS.filter(c => c.page === characterPage);
 
   return (
     <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
@@ -422,69 +711,144 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         />
 
         {!isPlaying && !isGameOver && !showCharacterSelect && (
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center">
-            <GlossyButton onClick={resetGame} className="mb-4" data-testid="button-start-game">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+            <GlossyButton onClick={() => startGame(false)} data-testid="button-start-game">
               <Play className="w-6 h-6" /> Jogar
             </GlossyButton>
-            <GlossyButton onClick={() => setShowCharacterSelect(true)} className="mb-4" data-testid="button-character">
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => startGame(true)}
+              className="relative overflow-hidden px-8 py-4 rounded-lg font-display font-bold text-lg text-white tracking-wide transition-all duration-200 flex items-center justify-center gap-2 min-w-[200px]"
+              style={{
+                background: "linear-gradient(180deg, #ff6b6b 0%, #ee2222 49%, #cc0000 51%, #aa0000 100%)",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.2), 0 8px 20px rgba(200, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.4)",
+                border: "2px solid rgba(255, 100, 100, 0.5)"
+              }}
+              data-testid="button-hardcore"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent opacity-50 rounded-t-lg pointer-events-none" />
+              <Flame className="w-5 h-5" /> HARDCORE MODE
+            </motion.button>
+            <GlossyButton onClick={() => setShowCharacterSelect(true)} data-testid="button-character">
               <Settings className="w-5 h-5" /> Personagem
             </GlossyButton>
-            <button onClick={onExit} className="text-white hover:underline mt-4 font-bold drop-shadow-md" data-testid="button-back-menu">
+            <button onClick={onExit} className="text-white hover:underline mt-2 font-bold drop-shadow-md" data-testid="button-back-menu">
               Voltar ao Menu
             </button>
           </div>
         )}
 
-        {showCharacterSelect && !isPlaying && (
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4">
-            <h2 className="text-2xl font-display font-black text-white drop-shadow-lg mb-6">
-              Escolha seu Personagem
-            </h2>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {characterOptions.map((opt) => (
-                <motion.button
-                  key={opt.type}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCharacter(opt.type)}
-                  className={`px-4 py-3 rounded-lg font-bold text-sm transition-all ${
-                    character === opt.type
-                      ? "bg-gradient-to-b from-lime-300 to-lime-500 text-green-900 shadow-lg border-2 border-white"
-                      : "bg-white/80 text-gray-700 hover:bg-white"
-                  }`}
-                  data-testid={`button-character-${opt.type}`}
+        <AnimatePresence>
+          {showCharacterSelect && !isPlaying && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+            >
+              <h2 className="text-2xl font-display font-black text-white drop-shadow-lg mb-2">
+                Escolha seu Personagem
+              </h2>
+              <p className="text-white/70 text-sm mb-4">Página {characterPage}/2</p>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <button
+                  onClick={() => setCharacterPage(1)}
+                  disabled={characterPage === 1}
+                  className="p-2 rounded-lg bg-white/20 disabled:opacity-30 hover:bg-white/30 transition-colors"
                 >
-                  {opt.label}
-                </motion.button>
-              ))}
-            </div>
-            <GlossyButton onClick={() => setShowCharacterSelect(false)} data-testid="button-back-character">
-              Voltar
-            </GlossyButton>
-          </div>
-        )}
+                  <ChevronLeft className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => setCharacterPage(2)}
+                  disabled={characterPage === 2}
+                  className="p-2 rounded-lg bg-white/20 disabled:opacity-30 hover:bg-white/30 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6 w-full max-w-xs">
+                {currentPageCharacters.map((opt) => {
+                  const isUnlocked = opt.isUnlocked(playerStats);
+                  const isSelected = character === opt.type;
+                  
+                  return (
+                    <motion.button
+                      key={opt.type}
+                      whileHover={isUnlocked ? { scale: 1.05 } : {}}
+                      whileTap={isUnlocked ? { scale: 0.95 } : {}}
+                      onClick={() => isUnlocked && setCharacter(opt.type)}
+                      disabled={!isUnlocked}
+                      className={`relative px-3 py-3 rounded-lg font-bold text-sm transition-all ${
+                        isSelected && isUnlocked
+                          ? "bg-gradient-to-b from-lime-300 to-lime-500 text-green-900 shadow-lg border-2 border-white"
+                          : isUnlocked
+                          ? "bg-white/80 text-gray-700 hover:bg-white"
+                          : "bg-gray-500/50 text-gray-300 cursor-not-allowed"
+                      }`}
+                      data-testid={`button-character-${opt.type}`}
+                    >
+                      {!isUnlocked && (
+                        <Lock className="absolute top-1 right-1 w-4 h-4 text-gray-400" />
+                      )}
+                      <div className="font-bold">{opt.label}</div>
+                      <div className="text-xs mt-1 opacity-70">
+                        {isUnlocked ? "Desbloqueado" : opt.unlockRequirement}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+              
+              <div className="text-white/60 text-xs mb-4 text-center">
+                Flaps: {playerStats.totalFlaps} | Recorde: {playerStats.bestScore} | Hardcore: {playerStats.bestHardcoreScore}
+              </div>
+              
+              <GlossyButton onClick={() => setShowCharacterSelect(false)} data-testid="button-back-character">
+                Voltar
+              </GlossyButton>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isGameOver && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
-            <h2 className="text-4xl font-display font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] mb-4 transform -rotate-2">
+            <h2 className="text-4xl font-display font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] mb-2 transform -rotate-2">
               FIM DE JOGO
             </h2>
-            <p className="text-2xl text-white font-bold mb-8 drop-shadow-md">
+            {isHardcore && (
+              <span className="text-red-400 font-bold text-sm mb-2 flex items-center gap-1">
+                <Flame className="w-4 h-4" /> HARDCORE
+              </span>
+            )}
+            <p className="text-2xl text-white font-bold mb-2 drop-shadow-md">
               Pontos: {score}
             </p>
-            <GlossyButton onClick={resetGame} className="mb-4" data-testid="button-try-again">
+            <p className="text-white/70 text-sm mb-6">
+              Flaps: {sessionFlaps}
+            </p>
+            <GlossyButton onClick={() => startGame(isHardcore)} className="mb-4" data-testid="button-try-again">
               <RotateCcw className="w-5 h-5" /> Tentar de Novo
             </GlossyButton>
-            <button onClick={onExit} className="text-white font-bold hover:underline mt-4 drop-shadow-md" data-testid="button-exit">
+            <button onClick={onExit} className="text-white font-bold hover:underline mt-2 drop-shadow-md" data-testid="button-exit">
               Sair
             </button>
           </div>
         )}
         
         {isPlaying && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 font-display font-black text-5xl text-white drop-shadow-[0_4px_0_rgba(0,0,0,0.3)] pointer-events-none select-none">
-            {score}
-          </div>
+          <>
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 font-display font-black text-5xl text-white drop-shadow-[0_4px_0_rgba(0,0,0,0.3)] pointer-events-none select-none">
+              {score}
+            </div>
+            {isHardcore && (
+              <div className="absolute top-16 left-1/2 -translate-x-1/2 flex items-center gap-1 text-red-400 font-bold text-sm">
+                <Flame className="w-4 h-4" /> HARDCORE
+              </div>
+            )}
+          </>
         )}
       </motion.div>
     </div>
