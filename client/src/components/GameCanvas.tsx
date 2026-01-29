@@ -406,24 +406,24 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.strokeStyle = "#c41e3a";
       ctx.lineWidth = 2;
       
-      // Fixed baseball lines - moved towards the edges
+      // Fixed baseball lines - moved further towards the edges
       ctx.beginPath();
-      ctx.arc(-22, 0, 18, -0.6, 0.6);
+      ctx.arc(-26, 0, 22, -0.6, 0.6);
       ctx.stroke();
       for (let i = -3; i <= 3; i++) {
         const angle = i * 0.18;
-        const sx = -22 + Math.cos(angle) * 18;
-        const sy = Math.sin(angle) * 18;
+        const sx = -26 + Math.cos(angle) * 22;
+        const sy = Math.sin(angle) * 22;
         ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
       ctx.beginPath();
-      ctx.arc(22, 0, 18, Math.PI - 0.6, Math.PI + 0.6);
+      ctx.arc(26, 0, 22, Math.PI - 0.6, Math.PI + 0.6);
       ctx.stroke();
       for (let i = -3; i <= 3; i++) {
         const angle = Math.PI + i * 0.18;
-        const sx = 22 + Math.cos(angle) * 18;
-        const sy = Math.sin(angle) * 18;
+        const sx = 26 + Math.cos(angle) * 22;
+        const sy = Math.sin(angle) * 22;
         ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
@@ -452,12 +452,12 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.lineWidth = 2.5;
       
-      // Fixed tennis lines - moved further towards the edges
+      // Fixed tennis lines - moved even further towards the edges
       ctx.beginPath();
-      ctx.arc(-26, 0, 22, -0.5, 0.5);
+      ctx.arc(-30, 0, 26, -0.5, 0.5);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(26, 0, 22, Math.PI - 0.5, Math.PI + 0.5);
+      ctx.arc(30, 0, 26, Math.PI - 0.5, Math.PI + 0.5);
       ctx.stroke();
       
       for (let i = 0; i < 20; i++) {
