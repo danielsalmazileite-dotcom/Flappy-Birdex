@@ -507,17 +507,37 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
     // Wings LAST (to be in front)
     const wingFrame = Math.floor(frame / 5) % 3;
-    const wingY = wingFrame === 0 ? -5 : (wingFrame === 1 ? 0 : 5);
+    const wingRotation = wingFrame === 0 ? -0.4 : (wingFrame === 1 ? 0 : 0.4);
     
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
-    ctx.lineWidth = 1;
+    ctx.fillStyle = "#fff8b3";
+    ctx.strokeStyle = "#e65100";
+    ctx.lineWidth = 2;
     
-    // Left Wing (now drawn after body)
+    // Bird-like Wing (drawn after body to be in front)
+    ctx.save();
+    ctx.translate(-2, 0); // Position slightly right relative to previous
+    ctx.rotate(wingRotation);
+    
     ctx.beginPath();
-    ctx.ellipse(-BIRD_RADIUS - 5, wingY, 12, 8, Math.PI / 4, 0, Math.PI * 2);
+    // More rounded, bird-like wing shape
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-15, -15, -25, 5, -5, 10);
+    ctx.closePath();
+    
     ctx.fill();
     ctx.stroke();
+    
+    // Wing detail (feathers)
+    ctx.strokeStyle = "rgba(230, 81, 0, 0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-8, 2);
+    ctx.lineTo(-15, 2);
+    ctx.moveTo(-7, 5);
+    ctx.lineTo(-12, 6);
+    ctx.stroke();
+    
+    ctx.restore();
     
     ctx.restore();
   }, [canvasSize.width]);
