@@ -43,22 +43,16 @@ export default function Home() {
           </div>
         ) : (
           <div className="w-full space-y-4 mb-6">
-            <div className="flex flex-col items-center gap-2 p-4 bg-white/30 rounded-xl border border-white/50">
+            <div 
+              className="flex flex-col items-center gap-2 p-4 bg-white/30 rounded-xl border border-white/50 relative cursor-pointer hover:bg-white/40 transition-colors"
+              onClick={() => setShowCharacterSelect(!showCharacterSelect)}
+            >
               <span className="text-sm font-bold text-green-800 uppercase tracking-wider">Personagem Atual</span>
               <span className="text-xl font-black text-green-900">{CHARACTERS.find(c => c.type === character)?.label}</span>
             </div>
 
-            <GlossyButton 
-              className="w-full py-4 text-lg" 
-              variant="secondary"
-              onClick={() => setShowCharacterSelect(!showCharacterSelect)}
-            >
-              <Settings className="w-5 h-5 mr-2" /> 
-              {showCharacterSelect ? "Fechar Seleção" : "Trocar Personagem"}
-            </GlossyButton>
-
             {showCharacterSelect && (
-              <div className="grid grid-cols-2 gap-2 mt-4 p-2 bg-white/20 rounded-xl">
+              <div className="grid grid-cols-2 gap-2 mt-4 p-2 bg-white/20 rounded-xl border border-white/30 animate-in fade-in slide-in-from-top-2">
                 {CHARACTERS.map((char) => {
                   const unlocked = char.isUnlocked(stats);
                   return (
@@ -68,7 +62,7 @@ export default function Home() {
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center ${
                         character === char.type 
                           ? "border-lime-500 bg-lime-100/50" 
-                          : "border-transparent bg-white/20"
+                          : "border-transparent bg-white/20 hover:bg-white/40"
                       } ${!unlocked && "opacity-50 grayscale cursor-not-allowed"}`}
                     >
                       <div className="text-xs font-black uppercase tracking-tight text-green-900">{char.label}</div>
