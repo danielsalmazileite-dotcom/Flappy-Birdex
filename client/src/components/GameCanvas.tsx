@@ -273,6 +273,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineWidth = 2;
       ctx.stroke();
       
+      // Highlight/Shine
       ctx.beginPath();
       ctx.ellipse(-5, -8, 8, 5, -0.3, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.6)";

@@ -11,6 +11,7 @@ export default function Home() {
   });
   const [stats] = useState(getPlayerStats());
   const [showStats, setShowStats] = useState(false);
+  const [showCharacterSelect, setShowCharacterSelect] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("flappi_selected_char", character);
@@ -41,31 +42,43 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <>
-            <p className="text-green-800 font-medium text-lg mb-4">
-              Escolha seu Personagem
-            </p>
-
-            <div className="grid grid-cols-4 gap-2 mb-8">
-              {CHARACTERS.map((char) => {
-                const unlocked = char.isUnlocked(stats);
-                return (
-                  <button
-                    key={char.type}
-                    onClick={() => unlocked && setCharacter(char.type)}
-                    className={`p-2 rounded-lg border-2 transition-all flex flex-col items-center ${
-                      character === char.type 
-                        ? "border-lime-500 bg-lime-100/50" 
-                        : "border-transparent bg-white/20"
-                    } ${!unlocked && "opacity-50 grayscale cursor-not-allowed"}`}
-                  >
-                    <div className="text-2xl mb-1">{char.type === "bird" ? "🐤" : (char.type === "soccer" ? "⚽" : "🎾")}</div>
-                    <div className="text-[10px] font-bold truncate w-full">{char.label}</div>
-                  </button>
-                );
-              })}
+          <div className="w-full space-y-4 mb-6">
+            <div className="flex flex-col items-center gap-2 p-4 bg-white/30 rounded-xl border border-white/50">
+              <span className="text-sm font-bold text-green-800 uppercase tracking-wider">Personagem Atual</span>
+              <span className="text-xl font-black text-green-900">{CHARACTERS.find(c => c.type === character)?.label}</span>
             </div>
-          </>
+
+            <GlossyButton 
+              className="w-full py-4 text-lg" 
+              variant="secondary"
+              onClick={() => setShowCharacterSelect(!showCharacterSelect)}
+            >
+              <Settings className="w-5 h-5 mr-2" /> 
+              {showCharacterSelect ? "Fechar Seleção" : "Trocar Personagem"}
+            </GlossyButton>
+
+            {showCharacterSelect && (
+              <div className="grid grid-cols-2 gap-2 mt-4 p-2 bg-white/20 rounded-xl">
+                {CHARACTERS.map((char) => {
+                  const unlocked = char.isUnlocked(stats);
+                  return (
+                    <button
+                      key={char.type}
+                      onClick={() => unlocked && setCharacter(char.type)}
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center ${
+                        character === char.type 
+                          ? "border-lime-500 bg-lime-100/50" 
+                          : "border-transparent bg-white/20"
+                      } ${!unlocked && "opacity-50 grayscale cursor-not-allowed"}`}
+                    >
+                      <div className="text-xs font-black uppercase tracking-tight text-green-900">{char.label}</div>
+                      {!unlocked && <div className="text-[8px] mt-1 text-red-600 font-bold uppercase">{char.unlockRequirement}</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         <div className="w-full flex flex-col gap-4">
