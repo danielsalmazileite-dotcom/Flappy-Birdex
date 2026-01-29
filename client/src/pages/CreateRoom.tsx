@@ -79,12 +79,11 @@ export default function CreateRoom() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-slate-500 animate-pulse">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Waiting for players...</span>
-            </div>
+            <GlossyButton onClick={() => setLocation(`/online/game/${createdCode}`)} className="w-full text-xl py-6">
+              Start Game
+            </GlossyButton>
 
-            <GlossyButton onClick={() => setLocation("/")} className="mt-4 bg-red-100">
+            <GlossyButton onClick={() => setLocation("/")} variant="secondary" className="w-full opacity-50">
               Cancel
             </GlossyButton>
           </div>

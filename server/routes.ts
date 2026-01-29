@@ -51,27 +51,69 @@ export async function registerRoutes(
     }
   });
 
-  // WebSocket Setup
   const wss = new WebSocketServer({ noServer: true });
+  const roomsState = new Map<string, {
+    host: WebSocket;
+    players: Map<WebSocket, { y: number; char: string; nick: string }>;
+    started: boolean;
+  }>();
 
-  httpServer.on("upgrade", (request, socket, head) => {
-    if (request.url?.startsWith("/ws")) {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit("connection", ws, request);
+  wss.on("connection", (ws, req) => {
+    const params = new URLSearchParams(req.url?.split("?")[1]);
+    const roomCode = params.get("code");
+    const nickname = params.get("nick") || "Player";
+    const character = params.get("char") || "bird";
+
+    if (!roomCode) return ws.close();
+
+    if (!roomsState.has(roomCode)) {
+      roomsState.set(roomCode, {
+        host: ws,
+        players: new Map(),
+        started: false
       });
     }
-  });
 
-  wss.on("connection", (ws) => {
-    console.log("New WebSocket connection");
+    const state = roomsState.get(roomCode)!;
+    state.players.set(ws, { y: 320, char: character, nick: nickname });
+
+    // Broadcast new player
+    const broadcast = () => {
+      const players = Array.from(state.players.entries()).map(([socket, p]) => ({
+        id: socket === state.host ? "host" : "player",
+        ...p
+      }));
+      const msg = JSON.stringify({ type: "sync", players, started: state.started });
+      state.players.forEach((_, socket) => {
+        if (socket.readyState === WebSocket.OPEN) socket.send(msg);
+      });
+    };
+
+    broadcast();
 
     ws.on("message", (message) => {
-      // Basic echo for now, can be expanded for game state
       try {
         const data = JSON.parse(message.toString());
-        // Handle game events here
-      } catch (e) {
-        console.error("Invalid message format");
+        if (data.type === "move") {
+          const p = state.players.get(ws);
+          if (p) {
+            p.y = data.y;
+            broadcast();
+          }
+        } else if (data.type === "start" && ws === state.host) {
+          state.started = true;
+          broadcast();
+        }
+      } catch (e) {}
+    });
+
+    ws.on("close", () => {
+      state.players.delete(ws);
+      if (ws === state.host) {
+        roomsState.delete(roomCode);
+        state.players.forEach((_, socket) => socket.close());
+      } else {
+        broadcast();
       }
     });
   });

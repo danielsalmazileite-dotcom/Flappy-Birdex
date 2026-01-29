@@ -38,12 +38,11 @@ export default function JoinRoom() {
               Joined {joinedRoom.name}!
             </h2>
             
-            <div className="flex items-center gap-3 text-slate-500 animate-pulse my-8">
-              <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
-              <span className="text-lg font-medium">Waiting for host to start...</span>
-            </div>
+            <GlossyButton onClick={() => setLocation(`/online/game/${joinedRoom.code}`)} className="w-full text-xl py-6">
+              Enter Game
+            </GlossyButton>
 
-            <GlossyButton onClick={() => setLocation("/")} className="mt-4 bg-red-100">
+            <GlossyButton onClick={() => setLocation("/")} variant="secondary" className="w-full opacity-50">
               Leave Room
             </GlossyButton>
           </div>
