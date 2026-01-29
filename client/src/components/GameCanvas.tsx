@@ -731,7 +731,10 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
                       key={opt.type}
                       whileHover={isUnlocked ? { scale: 1.05 } : {}}
                       whileTap={isUnlocked ? { scale: 0.95 } : {}}
-                      onClick={() => isUnlocked && setCharacter(opt.type)}
+                      onClick={() => {
+                        console.log("Selecting character:", opt.type, "Unlocked:", isUnlocked);
+                        if (isUnlocked) setCharacter(opt.type);
+                      }}
                       disabled={!isUnlocked}
                       className={`relative px-3 py-3 rounded-lg font-bold text-sm transition-all ${
                         isSelected && isUnlocked
