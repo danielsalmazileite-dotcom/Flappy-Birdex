@@ -336,32 +336,49 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#1a1a1a";
+      ctx.strokeStyle = "#1a1a1a";
+      ctx.lineWidth = 1;
+
+      // Middle pentagon
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
         const angle = (i * 72 - 90) * Math.PI / 180;
-        const px = Math.cos(angle) * 6;
-        const py = Math.sin(angle) * 6;
+        const px = Math.cos(angle) * 7;
+        const py = Math.sin(angle) * 7;
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
       ctx.fill();
       
-      const outerAngles = [0, 72, 144, 216, 288];
-      outerAngles.forEach((angle) => {
+      // Connect to outer hexes/pents
+      const hexAngles = [0, 72, 144, 216, 288];
+      hexAngles.forEach((angle) => {
         const rad = (angle - 90) * Math.PI / 180;
-        const cx = Math.cos(rad) * 13;
-        const cy = Math.sin(rad) * 13;
+        const cx = Math.cos(rad) * 14;
+        const cy = Math.sin(rad) * 14;
+        
         ctx.beginPath();
-        for (let i = 0; i < 5; i++) {
-          const a = ((i * 72) + angle) * Math.PI / 180;
-          const px = cx + Math.cos(a) * 4;
-          const py = cy + Math.sin(a) * 4;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+        for (let i = 0; i < 6; i++) {
+          const a = ((i * 60) + angle) * Math.PI / 180;
+          const px = cx + Math.cos(a) * 5;
+          const py = cy + Math.sin(a) * 5;
+          
+          // Clip to ball circle
+          const dist = Math.sqrt(px*px + py*py);
+          if (dist < BIRD_RADIUS) {
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
         }
         ctx.closePath();
         ctx.fill();
+        
+        // Stitching lines
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(rad)*7, Math.sin(rad)*7);
+        ctx.lineTo(cx, cy);
+        ctx.stroke();
       });
       
       ctx.beginPath();
@@ -389,24 +406,24 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.strokeStyle = "#c41e3a";
       ctx.lineWidth = 2;
       
-      // Fixed baseball lines
+      // Fixed baseball lines - moved towards the edges
       ctx.beginPath();
-      ctx.arc(-18, 0, 16, -0.6, 0.6);
+      ctx.arc(-22, 0, 18, -0.6, 0.6);
       ctx.stroke();
       for (let i = -3; i <= 3; i++) {
         const angle = i * 0.18;
-        const sx = -18 + Math.cos(angle) * 16;
-        const sy = Math.sin(angle) * 16;
+        const sx = -22 + Math.cos(angle) * 18;
+        const sy = Math.sin(angle) * 18;
         ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
       ctx.beginPath();
-      ctx.arc(18, 0, 16, Math.PI - 0.6, Math.PI + 0.6);
+      ctx.arc(22, 0, 18, Math.PI - 0.6, Math.PI + 0.6);
       ctx.stroke();
       for (let i = -3; i <= 3; i++) {
         const angle = Math.PI + i * 0.18;
-        const sx = 18 + Math.cos(angle) * 16;
-        const sy = Math.sin(angle) * 16;
+        const sx = 22 + Math.cos(angle) * 18;
+        const sy = Math.sin(angle) * 18;
         ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
@@ -435,12 +452,12 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.lineWidth = 2.5;
       
-      // Fixed tennis lines
+      // Fixed tennis lines - moved further towards the edges
       ctx.beginPath();
-      ctx.arc(-22, 0, 20, -0.5, 0.5);
+      ctx.arc(-26, 0, 22, -0.5, 0.5);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(22, 0, 20, Math.PI - 0.5, Math.PI + 0.5);
+      ctx.arc(26, 0, 22, Math.PI - 0.5, Math.PI + 0.5);
       ctx.stroke();
       
       for (let i = 0; i < 20; i++) {
@@ -684,9 +701,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
               <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent opacity-50 rounded-t-lg pointer-events-none" />
               <Flame className="w-5 h-5" /> HARDCORE MODE
             </motion.button>
-            <GlossyButton onClick={() => setShowCharacterSelect(true)} data-testid="button-character">
-              <Settings className="w-5 h-5" /> Personagem
-            </GlossyButton>
             <button onClick={onExit} className="text-white hover:underline mt-2 font-bold drop-shadow-md" data-testid="button-back-menu">
               Voltar ao Menu
             </button>
