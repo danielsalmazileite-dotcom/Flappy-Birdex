@@ -114,8 +114,8 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
   const startGame = (hardcoreMode: boolean) => {
     setIsHardcore(hardcoreMode);
-    // Hardcore mode is MUCH faster: speed 8 vs normal 3
-    const speed = hardcoreMode ? 8 : 3;
+    // Hardcore mode is slightly slower now: speed 6 vs original 8
+    const speed = hardcoreMode ? 6 : 3;
     
     // Start appropriate music
     stopAllMusic();
@@ -128,8 +128,8 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     gameState.current = {
       birdY: canvasSize.height / 2,
       velocity: 0,
-      gravity: hardcoreMode ? 0.6 : 0.4,
-      jumpStrength: hardcoreMode ? -8 : -6,
+      gravity: hardcoreMode ? 0.5 : 0.4,
+      jumpStrength: hardcoreMode ? -7 : -6,
       isGameRunning: true,
       pipes: [],
       frameCount: 0,
@@ -234,17 +234,37 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
   const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, y: number, type: CharacterType, frame: number) => {
     const x = canvasSize.width * 0.25;
-    ctx.save();
+    const velocity = gameState.current.velocity;
+    // Calculate rotation based on velocity (tilt)
+    const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, velocity * 0.1));
     
-    if (type === "bird") {
-      const birdGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    
+    // Draw Wings for all characters
+    const wingFrame = Math.floor(frame / 5) % 3;
+    const wingY = wingFrame === 0 ? -5 : (wingFrame === 1 ? 0 : 5);
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+    ctx.lineWidth = 1;
+    
+    // Left Wing
+    ctx.beginPath();
+    ctx.ellipse(-BIRD_RADIUS - 5, wingY, 12, 8, Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    if (type === "bird" || type === "birdglasses") {
+      const birdGradient = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
       birdGradient.addColorStop(0, "#fff8b3");
       birdGradient.addColorStop(0.3, "#ffeb3b");
       birdGradient.addColorStop(0.7, "#ffc107");
       birdGradient.addColorStop(1, "#ff9800");
       
       ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = birdGradient;
       ctx.shadowBlur = 15;
       ctx.shadowColor = "rgba(255,200,0,0.5)";
@@ -254,92 +274,61 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.ellipse(x - 5, y - 8, 8, 5, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(-5, -8, 8, 5, -0.3, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.6)";
       ctx.fill();
       
       ctx.shadowBlur = 0;
-      ctx.beginPath();
-      ctx.arc(x + 8, y - 5, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + 10, y - 5, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "black";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + 11, y - 6, 1, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
-      ctx.fill();
+      if (type === "bird") {
+        ctx.beginPath();
+        ctx.arc(8, -5, 6, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(10, -5, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "black";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(11, -6, 1, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      } else {
+        // Sunglasses
+        ctx.fillStyle = "#1a1a1a";
+        ctx.beginPath();
+        ctx.roundRect(2, -10, 14, 10, 2);
+        ctx.fill();
+        ctx.fillStyle = "#333";
+        ctx.beginPath();
+        ctx.roundRect(4, -8, 10, 6, 1);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.beginPath();
+        ctx.ellipse(7, -6, 2, 1.5, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#1a1a1a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(2, -5);
+        ctx.lineTo(-8, -3);
+        ctx.stroke();
+      }
       
       ctx.beginPath();
-      ctx.moveTo(x + 14, y + 2);
-      ctx.lineTo(x + 26, y + 5);
-      ctx.lineTo(x + 14, y + 10);
-      ctx.fillStyle = "#ff5722";
-      ctx.fill();
-    } else if (type === "birdglasses") {
-      // Bird with sunglasses
-      const birdGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
-      birdGradient.addColorStop(0, "#fff8b3");
-      birdGradient.addColorStop(0.3, "#ffeb3b");
-      birdGradient.addColorStop(0.7, "#ffc107");
-      birdGradient.addColorStop(1, "#ff9800");
-      
-      ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = birdGradient;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(255,200,0,0.5)";
-      ctx.fill();
-      ctx.strokeStyle = "#e65100";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.ellipse(x - 5, y - 8, 8, 5, -0.3, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.fill();
-      
-      ctx.shadowBlur = 0;
-      // Sunglasses
-      ctx.fillStyle = "#1a1a1a";
-      ctx.beginPath();
-      ctx.roundRect(x + 2, y - 10, 14, 10, 2);
-      ctx.fill();
-      ctx.fillStyle = "#333";
-      ctx.beginPath();
-      ctx.roundRect(x + 4, y - 8, 10, 6, 1);
-      ctx.fill();
-      // Lens shine
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
-      ctx.beginPath();
-      ctx.ellipse(x + 7, y - 6, 2, 1.5, 0.3, 0, Math.PI * 2);
-      ctx.fill();
-      // Arm
-      ctx.strokeStyle = "#1a1a1a";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x + 2, y - 5);
-      ctx.lineTo(x - 8, y - 3);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(x + 14, y + 2);
-      ctx.lineTo(x + 26, y + 5);
-      ctx.lineTo(x + 14, y + 10);
+      ctx.moveTo(14, 2);
+      ctx.lineTo(26, 5);
+      ctx.lineTo(14, 10);
       ctx.fillStyle = "#ff5722";
       ctx.fill();
     } else if (type === "soccer") {
-      // Improved soccer ball with proper pentagon pattern
-      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
+      const ballGradient = ctx.createRadialGradient(-6, -8, 3, 0, 0, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
       ballGradient.addColorStop(0.5, "#f5f5f5");
       ballGradient.addColorStop(0.8, "#e0e0e0");
       ballGradient.addColorStop(1, "#c0c0c0");
       
       ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = ballGradient;
       ctx.shadowBlur = 15;
       ctx.shadowColor = "rgba(0,0,0,0.4)";
@@ -349,25 +338,23 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.stroke();
       
       ctx.shadowBlur = 0;
-      // Center pentagon
       ctx.fillStyle = "#1a1a1a";
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
         const angle = (i * 72 - 90) * Math.PI / 180;
-        const px = x + Math.cos(angle) * 6;
-        const py = y + Math.sin(angle) * 6;
+        const px = Math.cos(angle) * 6;
+        const py = Math.sin(angle) * 6;
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
       ctx.fill();
       
-      // Outer pentagons
       const outerAngles = [0, 72, 144, 216, 288];
       outerAngles.forEach((angle) => {
         const rad = (angle - 90) * Math.PI / 180;
-        const cx = x + Math.cos(rad) * 13;
-        const cy = y + Math.sin(rad) * 13;
+        const cx = Math.cos(rad) * 13;
+        const cy = Math.sin(rad) * 13;
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
           const a = ((i * 72) + angle) * Math.PI / 180;
@@ -380,21 +367,19 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         ctx.fill();
       });
       
-      // Glossy highlight
       ctx.beginPath();
-      ctx.ellipse(x - 7, y - 10, 7, 4, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(-7, -10, 7, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.fill();
     } else if (type === "baseball") {
-      // Improved baseball with better stitching
-      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
+      const ballGradient = ctx.createRadialGradient(-6, -8, 3, 0, 0, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
       ballGradient.addColorStop(0.4, "#faf8f5");
       ballGradient.addColorStop(0.8, "#f0ebe3");
       ballGradient.addColorStop(1, "#e5ddd0");
       
       ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = ballGradient;
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(0,0,0,0.35)";
@@ -404,53 +389,43 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.stroke();
       
       ctx.shadowBlur = 0;
-      // Left stitching curve
       ctx.strokeStyle = "#c41e3a";
       ctx.lineWidth = 2;
+      
+      // Fixed baseball lines
       ctx.beginPath();
-      ctx.arc(x - 12, y, 14, -0.7, 0.7);
+      ctx.arc(-18, 0, 16, -0.6, 0.6);
       ctx.stroke();
-      // Left stitch marks
       for (let i = -3; i <= 3; i++) {
         const angle = i * 0.18;
-        const cx = x - 12 + Math.cos(angle) * 14;
-        const cy = y + Math.sin(angle) * 14;
-        ctx.beginPath();
-        ctx.moveTo(cx - 2, cy - 1);
-        ctx.lineTo(cx + 2, cy + 1);
-        ctx.stroke();
+        const sx = -18 + Math.cos(angle) * 16;
+        const sy = Math.sin(angle) * 16;
+        ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
-      // Right stitching curve
       ctx.beginPath();
-      ctx.arc(x + 12, y, 14, Math.PI - 0.7, Math.PI + 0.7);
+      ctx.arc(18, 0, 16, Math.PI - 0.6, Math.PI + 0.6);
       ctx.stroke();
-      // Right stitch marks
       for (let i = -3; i <= 3; i++) {
         const angle = Math.PI + i * 0.18;
-        const cx = x + 12 + Math.cos(angle) * 14;
-        const cy = y + Math.sin(angle) * 14;
-        ctx.beginPath();
-        ctx.moveTo(cx - 2, cy - 1);
-        ctx.lineTo(cx + 2, cy + 1);
-        ctx.stroke();
+        const sx = 18 + Math.cos(angle) * 16;
+        const sy = Math.sin(angle) * 16;
+        ctx.beginPath(); ctx.moveTo(sx-2, sy-1); ctx.lineTo(sx+2, sy+1); ctx.stroke();
       }
       
-      // Glossy highlight
       ctx.beginPath();
-      ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(-6, -10, 6, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.8)";
       ctx.fill();
     } else if (type === "tennis") {
-      // Improved tennis ball with fuzzy texture
-      const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      const ballGradient = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#e8ff59");
       ballGradient.addColorStop(0.4, "#d4f034");
       ballGradient.addColorStop(0.7, "#c6dc00");
       ballGradient.addColorStop(1, "#a8c000");
       
       ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = ballGradient;
       ctx.shadowBlur = 12;
       ctx.shadowColor = "rgba(200,220,0,0.5)";
@@ -460,68 +435,53 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.stroke();
       
       ctx.shadowBlur = 0;
-      // Curved white lines
       ctx.strokeStyle = "rgba(255,255,255,0.9)";
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
+      ctx.lineWidth = 2.5;
+      
+      // Fixed tennis lines
       ctx.beginPath();
-      ctx.arc(x - 16, y, 20, -0.5, 0.5);
+      ctx.arc(-22, 0, 20, -0.5, 0.5);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(x + 16, y, 20, Math.PI - 0.5, Math.PI + 0.5);
+      ctx.arc(22, 0, 20, Math.PI - 0.5, Math.PI + 0.5);
       ctx.stroke();
       
-      // Fuzzy texture dots
-      for (let i = 0; i < 30; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * (BIRD_RADIUS - 2);
-        ctx.beginPath();
-        ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 0.8, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,255,200,0.4)";
-        ctx.fill();
+      for (let i = 0; i < 20; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = Math.random() * (BIRD_RADIUS - 2);
+        ctx.beginPath(); ctx.arc(Math.cos(a)*d, Math.sin(a)*d, 0.6, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,200,0.3)"; ctx.fill();
       }
       
-      // Glossy highlight
       ctx.beginPath();
-      ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(-6, -10, 6, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.6)";
       ctx.fill();
     } else if (type === "fireball") {
-      // Animated fireball
       const pulseScale = 1 + Math.sin(frame * 0.15) * 0.1;
       const flameOffset = Math.sin(frame * 0.2) * 2;
-      
-      // Outer flame glow
       ctx.shadowBlur = 25;
       ctx.shadowColor = "rgba(255,100,0,0.8)";
-      
-      // Core
-      const coreGradient = ctx.createRadialGradient(x, y, 0, x, y, BIRD_RADIUS * pulseScale);
+      const coreGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, BIRD_RADIUS * pulseScale);
       coreGradient.addColorStop(0, "#ffffff");
       coreGradient.addColorStop(0.2, "#ffff80");
       coreGradient.addColorStop(0.5, "#ffaa00");
       coreGradient.addColorStop(0.8, "#ff5500");
       coreGradient.addColorStop(1, "#cc2200");
-      
       ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS * pulseScale, 0, Math.PI * 2);
+      ctx.arc(0, 0, BIRD_RADIUS * pulseScale, 0, Math.PI * 2);
       ctx.fillStyle = coreGradient;
       ctx.fill();
-      
       ctx.shadowBlur = 0;
-      
-      // Flame tongues
       for (let i = 0; i < 6; i++) {
         const angle = (i * 60 + frame * 3) * Math.PI / 180;
         const length = 8 + Math.sin(frame * 0.3 + i) * 4;
-        const fx = x + Math.cos(angle) * BIRD_RADIUS;
-        const fy = y + Math.sin(angle) * BIRD_RADIUS;
-        
-        const flameGradient = ctx.createLinearGradient(x, y, fx + Math.cos(angle) * length, fy + Math.sin(angle) * length);
+        const fx = Math.cos(angle) * BIRD_RADIUS;
+        const fy = Math.sin(angle) * BIRD_RADIUS;
+        const flameGradient = ctx.createLinearGradient(0, 0, fx + Math.cos(angle) * length, fy + Math.sin(angle) * length);
         flameGradient.addColorStop(0, "#ffaa00");
         flameGradient.addColorStop(0.5, "#ff5500");
         flameGradient.addColorStop(1, "rgba(200,0,0,0)");
-        
         ctx.beginPath();
         ctx.moveTo(fx - Math.sin(angle) * 4, fy + Math.cos(angle) * 4);
         ctx.lineTo(fx + Math.cos(angle) * length + flameOffset, fy + Math.sin(angle) * length);
@@ -529,119 +489,32 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         ctx.fillStyle = flameGradient;
         ctx.fill();
       }
-      
-      // Inner glow
-      ctx.beginPath();
-      ctx.arc(x - 3, y - 5, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      ctx.fill();
     } else if (type === "smiley") {
-      // Smiley face
-      const smileyGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
+      const smileyGradient = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
       smileyGradient.addColorStop(0, "#fff44f");
       smileyGradient.addColorStop(0.5, "#ffeb3b");
       smileyGradient.addColorStop(1, "#ffc107");
-      
-      ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = smileyGradient;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = "rgba(255,200,0,0.5)";
-      ctx.fill();
-      ctx.strokeStyle = "#e6a800";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
+      ctx.shadowBlur = 12; ctx.shadowColor = "rgba(255,200,0,0.5)";
+      ctx.fill(); ctx.strokeStyle = "#e6a800"; ctx.lineWidth = 2; ctx.stroke();
       ctx.shadowBlur = 0;
-      
-      // Eyes
       ctx.fillStyle = "#1a1a1a";
-      ctx.beginPath();
-      ctx.ellipse(x - 6, y - 4, 3, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + 6, y - 4, 3, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Eye shine
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.arc(x - 5, y - 5, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + 7, y - 5, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Smile
-      ctx.strokeStyle = "#1a1a1a";
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.arc(x, y + 2, 10, 0.2, Math.PI - 0.2);
-      ctx.stroke();
-      
-      // Cheeks
-      ctx.fillStyle = "rgba(255,150,150,0.4)";
-      ctx.beginPath();
-      ctx.ellipse(x - 12, y + 2, 4, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + 12, y + 2, 4, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Glossy highlight
-      ctx.beginPath();
-      ctx.ellipse(x - 6, y - 12, 6, 3, -0.3, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-6, -4, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(6, -4, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#1a1a1a"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(0, 2, 10, 0.2, Math.PI - 0.2); ctx.stroke();
     } else if (type === "golf") {
-      // Golf ball with dimples
-      const ballGradient = ctx.createRadialGradient(x - 6, y - 8, 3, x, y, BIRD_RADIUS);
+      const ballGradient = ctx.createRadialGradient(-6, -8, 3, 0, 0, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
-      ballGradient.addColorStop(0.5, "#f8f8f8");
-      ballGradient.addColorStop(0.8, "#e8e8e8");
       ballGradient.addColorStop(1, "#d0d0d0");
-      
-      ctx.beginPath();
-      ctx.arc(x, y, BIRD_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = ballGradient;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = "rgba(0,0,0,0.35)";
-      ctx.fill();
-      ctx.strokeStyle = "#b0b0b0";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      ctx.shadowBlur = 0;
-      
-      // Dimples pattern
-      const dimplePositions = [
-        [0, 0], [8, 0], [-8, 0], [4, 7], [-4, 7], [4, -7], [-4, -7],
-        [10, 5], [-10, 5], [10, -5], [-10, -5], [0, 10], [0, -10],
-        [6, -10], [-6, -10], [6, 10], [-6, 10]
-      ];
-      
-      dimplePositions.forEach(([dx, dy]) => {
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < BIRD_RADIUS - 3) {
-          // Dimple shadow
-          ctx.beginPath();
-          ctx.arc(x + dx, y + dy, 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(0,0,0,0.08)";
-          ctx.fill();
-          // Dimple highlight
-          ctx.beginPath();
-          ctx.arc(x + dx - 0.5, y + dy - 0.5, 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255,255,255,0.3)";
-          ctx.fill();
-        }
+      ctx.beginPath(); ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = ballGradient; ctx.fill(); ctx.strokeStyle = "#b0b0b0"; ctx.stroke();
+      const dimples = [[0,0],[8,0],[-8,0],[4,7],[-4,7],[4,-7],[-4,-7]];
+      dimples.forEach(([dx, dy]) => {
+        ctx.beginPath(); ctx.arc(dx, dy, 2, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fill();
       });
-      
-      // Main glossy highlight
-      ctx.beginPath();
-      ctx.ellipse(x - 7, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.8)";
-      ctx.fill();
     }
     
     ctx.restore();

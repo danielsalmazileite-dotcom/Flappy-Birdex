@@ -23,9 +23,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   private generateRoomCode() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const chars = "0123456789";
     let code = "";
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 6; i++) {
       code += chars[Math.floor(Math.random() * chars.length)];
     }
     return code;
