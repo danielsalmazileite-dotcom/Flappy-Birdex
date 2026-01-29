@@ -515,49 +515,51 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     }
 
     // Wings LAST (to be in front)
-    const wingFrame = Math.floor(frame / 5) % 3;
-    const wingRotation = wingFrame === 0 ? -0.3 : (wingFrame === 1 ? 0 : 0.3);
-    
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    
-    // Comic-style Wing (based on attached image)
-    ctx.save();
-    ctx.translate(2, 2); // Positioned further left (from 5 to 2)
-    ctx.rotate(wingRotation - 0.4); // Tilted more
-    ctx.scale(0.7, 0.7); // Smaller
-    
-    ctx.beginPath();
-    // Top feather (longest)
-    ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(-5, -15, -25, -20, -35, -5);
-    ctx.bezierCurveTo(-38, 0, -30, 5, -25, 2);
-    
-    // Middle feathers
-    ctx.bezierCurveTo(-28, 8, -25, 12, -18, 10);
-    ctx.bezierCurveTo(-20, 15, -15, 18, -10, 14);
-    ctx.bezierCurveTo(-12, 20, -5, 22, 0, 15);
-    
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    // Internal feather lines
-    ctx.beginPath();
-    ctx.moveTo(-10, -5);
-    ctx.lineTo(-25, -8);
-    ctx.moveTo(-8, 2);
-    ctx.lineTo(-18, 3);
-    ctx.moveTo(-5, 8);
-    ctx.lineTo(-12, 9);
-    ctx.strokeStyle = "rgba(0,0,0,0.2)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    
-    ctx.restore();
+    if (type === "bird" || type === "birdglasses") {
+      const wingFrame = Math.floor(frame / 5) % 3;
+      const wingRotation = wingFrame === 0 ? -0.3 : (wingFrame === 1 ? 0 : 0.3);
+      
+      ctx.fillStyle = "white";
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      
+      // Comic-style Wing (based on attached image)
+      ctx.save();
+      ctx.translate(2, 2); // Positioned further left (from 5 to 2)
+      ctx.rotate(wingRotation - 0.4); // Tilted more
+      ctx.scale(0.7, 0.7); // Smaller
+      
+      ctx.beginPath();
+      // Top feather (longest)
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-5, -15, -25, -20, -35, -5);
+      ctx.bezierCurveTo(-38, 0, -30, 5, -25, 2);
+      
+      // Middle feathers
+      ctx.bezierCurveTo(-28, 8, -25, 12, -18, 10);
+      ctx.bezierCurveTo(-20, 15, -15, 18, -10, 14);
+      ctx.bezierCurveTo(-12, 20, -5, 22, 0, 15);
+      
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      
+      // Internal feather lines
+      ctx.beginPath();
+      ctx.moveTo(-10, -5);
+      ctx.lineTo(-25, -8);
+      ctx.moveTo(-8, 2);
+      ctx.lineTo(-18, 3);
+      ctx.moveTo(-5, 8);
+      ctx.lineTo(-12, 9);
+      ctx.strokeStyle = "rgba(0,0,0,0.2)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
     
     ctx.restore();
   }, [canvasSize.width]);
