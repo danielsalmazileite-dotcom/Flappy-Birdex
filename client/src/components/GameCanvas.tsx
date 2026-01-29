@@ -242,20 +242,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     ctx.translate(x, y);
     ctx.rotate(rotation);
     
-    // Draw Wings for all characters
-    const wingFrame = Math.floor(frame / 5) % 3;
-    const wingY = wingFrame === 0 ? -5 : (wingFrame === 1 ? 0 : 5);
-    
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
-    ctx.lineWidth = 1;
-    
-    // Left Wing
-    ctx.beginPath();
-    ctx.ellipse(-BIRD_RADIUS - 5, wingY, 12, 8, Math.PI / 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    
+    // Character Body first
     if (type === "bird" || type === "birdglasses") {
       const birdGradient = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
       birdGradient.addColorStop(0, "#fff8b3");
@@ -517,6 +504,20 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fill();
       });
     }
+
+    // Wings LAST (to be in front)
+    const wingFrame = Math.floor(frame / 5) % 3;
+    const wingY = wingFrame === 0 ? -5 : (wingFrame === 1 ? 0 : 5);
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+    ctx.lineWidth = 1;
+    
+    // Left Wing (now drawn after body)
+    ctx.beginPath();
+    ctx.ellipse(-BIRD_RADIUS - 5, wingY, 12, 8, Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
     
     ctx.restore();
   }, [canvasSize.width]);
