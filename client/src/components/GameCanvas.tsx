@@ -701,6 +701,9 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
               <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent opacity-50 rounded-t-lg pointer-events-none" />
               <Flame className="w-5 h-5" /> HARDCORE MODE
             </motion.button>
+            <GlossyButton onClick={() => setShowCharacterSelect(true)} data-testid="button-character">
+              <Settings className="w-5 h-5" /> Personagem
+            </GlossyButton>
             <button onClick={onExit} className="text-white hover:underline mt-2 font-bold drop-shadow-md" data-testid="button-back-menu">
               Voltar ao Menu
             </button>
