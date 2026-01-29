@@ -507,34 +507,44 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
     // Wings LAST (to be in front)
     const wingFrame = Math.floor(frame / 5) % 3;
-    const wingRotation = wingFrame === 0 ? -0.4 : (wingFrame === 1 ? 0 : 0.4);
+    const wingRotation = wingFrame === 0 ? -0.3 : (wingFrame === 1 ? 0 : 0.3);
     
-    ctx.fillStyle = "#fff8b3";
-    ctx.strokeStyle = "#e65100";
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     
-    // Bird-like Wing (drawn after body to be in front)
+    // Comic-style Wing (based on attached image)
     ctx.save();
-    ctx.translate(-2, 0); // Position slightly right relative to previous
+    ctx.translate(5, 0); // Positioned to the right as requested
     ctx.rotate(wingRotation);
     
     ctx.beginPath();
-    // More rounded, bird-like wing shape
+    // Top feather (longest)
     ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(-15, -15, -25, 5, -5, 10);
-    ctx.closePath();
+    ctx.bezierCurveTo(-5, -15, -25, -20, -35, -5);
+    ctx.bezierCurveTo(-38, 0, -30, 5, -25, 2);
     
+    // Middle feathers
+    ctx.bezierCurveTo(-28, 8, -25, 12, -18, 10);
+    ctx.bezierCurveTo(-20, 15, -15, 18, -10, 14);
+    ctx.bezierCurveTo(-12, 20, -5, 22, 0, 15);
+    
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
     
-    // Wing detail (feathers)
-    ctx.strokeStyle = "rgba(230, 81, 0, 0.3)";
-    ctx.lineWidth = 1;
+    // Internal feather lines
     ctx.beginPath();
+    ctx.moveTo(-10, -5);
+    ctx.lineTo(-25, -8);
     ctx.moveTo(-8, 2);
-    ctx.lineTo(-15, 2);
-    ctx.moveTo(-7, 5);
-    ctx.lineTo(-12, 6);
+    ctx.lineTo(-18, 3);
+    ctx.moveTo(-5, 8);
+    ctx.lineTo(-12, 9);
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     
     ctx.restore();
