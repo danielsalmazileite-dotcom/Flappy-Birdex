@@ -517,8 +517,9 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     
     // Comic-style Wing (based on attached image)
     ctx.save();
-    ctx.translate(5, 0); // Positioned to the right as requested
-    ctx.rotate(wingRotation);
+    ctx.translate(8, 2); // Positioned to the right and slightly down
+    ctx.rotate(wingRotation - 0.4); // Tilted more
+    ctx.scale(0.7, 0.7); // Smaller
     
     ctx.beginPath();
     // Top feather (longest)
