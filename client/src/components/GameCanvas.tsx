@@ -25,6 +25,8 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+  const normalMusicRef = useRef<HTMLAudioElement | null>(null);
+  const hardcoreMusicRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
@@ -36,6 +38,22 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   const [playerStats, setPlayerStats] = useState<PlayerStats>(getPlayerStats());
   const [sessionFlaps, setSessionFlaps] = useState(0);
   const fireAnimationRef = useRef(0);
+
+  // Load audio files
+  useEffect(() => {
+    normalMusicRef.current = new Audio("/audio/jumper.mp3");
+    normalMusicRef.current.loop = true;
+    normalMusicRef.current.volume = 0.5;
+    
+    hardcoreMusicRef.current = new Audio("/audio/deadlocked.mp3");
+    hardcoreMusicRef.current.loop = true;
+    hardcoreMusicRef.current.volume = 0.6;
+    
+    return () => {
+      normalMusicRef.current?.pause();
+      hardcoreMusicRef.current?.pause();
+    };
+  }, []);
 
   const PIPE_WIDTH = 60;
   const PIPE_GAP = 150;
@@ -87,14 +105,31 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     };
   }, []);
 
+  const stopAllMusic = () => {
+    normalMusicRef.current?.pause();
+    hardcoreMusicRef.current?.pause();
+    if (normalMusicRef.current) normalMusicRef.current.currentTime = 0;
+    if (hardcoreMusicRef.current) hardcoreMusicRef.current.currentTime = 0;
+  };
+
   const startGame = (hardcoreMode: boolean) => {
     setIsHardcore(hardcoreMode);
-    const speed = hardcoreMode ? 5 : 3;
+    // Hardcore mode is MUCH faster: speed 8 vs normal 3
+    const speed = hardcoreMode ? 8 : 3;
+    
+    // Start appropriate music
+    stopAllMusic();
+    if (hardcoreMode) {
+      hardcoreMusicRef.current?.play().catch(() => {});
+    } else {
+      normalMusicRef.current?.play().catch(() => {});
+    }
+    
     gameState.current = {
       birdY: canvasSize.height / 2,
       velocity: 0,
-      gravity: hardcoreMode ? 0.5 : 0.4,
-      jumpStrength: hardcoreMode ? -7 : -6,
+      gravity: hardcoreMode ? 0.6 : 0.4,
+      jumpStrength: hardcoreMode ? -8 : -6,
       isGameRunning: true,
       pipes: [],
       frameCount: 0,
@@ -110,6 +145,8 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   };
 
   const endGame = () => {
+    // Stop music
+    stopAllMusic();
     // Save stats
     addFlaps(gameState.current.flapsThisGame);
     updateBestScore(gameState.current.score, isHardcore);
@@ -637,7 +674,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       gameState.current.birdY += gameState.current.velocity;
 
       gameState.current.frameCount++;
-      if (gameState.current.frameCount % (isHardcore ? 70 : 100) === 0) {
+      if (gameState.current.frameCount % (isHardcore ? 50 : 100) === 0) {
         const gapY = 150 + Math.random() * (canvas.height - 350);
         gameState.current.pipes.push({ x: canvas.width, gapY, passed: false });
       }
