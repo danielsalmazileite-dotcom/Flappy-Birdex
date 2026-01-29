@@ -17,12 +17,14 @@ interface Pipe {
 
 export function GameCanvas({ onExit }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const backgroundImageRef = useRef<HTMLImageElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [score, setScore] = useState(0);
   const [character, setCharacter] = useState<CharacterType>("bird");
+  const [canvasSize, setCanvasSize] = useState({ width: 360, height: 640 });
 
   const PIPE_WIDTH = 60;
   const PIPE_GAP = 150;
@@ -32,8 +34,8 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   const gameState = useRef({
     birdY: 320,
     velocity: 0,
-    gravity: 0.45,
-    jumpStrength: -9,
+    gravity: 0.4,
+    jumpStrength: -6,
     isGameRunning: false,
     pipes: [] as Pipe[],
     frameCount: 0,
@@ -41,6 +43,31 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   });
 
   const requestRef = useRef<number>();
+
+  // Resize canvas to fit screen
+  useEffect(() => {
+    const updateSize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      // Keep aspect ratio close to 9:16 for mobile feel
+      const aspectRatio = 9 / 16;
+      let canvasWidth = width;
+      let canvasHeight = height;
+      
+      if (width / height > aspectRatio) {
+        canvasWidth = height * aspectRatio;
+      } else {
+        canvasHeight = width / aspectRatio;
+      }
+      
+      setCanvasSize({ width: Math.floor(canvasWidth), height: Math.floor(canvasHeight) });
+      gameState.current.birdY = Math.floor(canvasHeight / 2);
+    };
+    
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   // Load background image
   useEffect(() => {
@@ -53,10 +80,10 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
   const resetGame = () => {
     gameState.current = {
-      birdY: 320,
+      birdY: canvasSize.height / 2,
       velocity: 0,
-      gravity: 0.45,
-      jumpStrength: -9,
+      gravity: 0.4,
+      jumpStrength: -6,
       isGameRunning: true,
       pipes: [],
       frameCount: 0,
@@ -68,17 +95,40 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     setShowCharacterSelect(false);
   };
 
-  const handleJump = () => {
+  const handleJump = useCallback(() => {
     if (gameState.current.isGameRunning) {
       gameState.current.velocity = gameState.current.jumpStrength;
     }
-  };
+  }, []);
+
+  // Touch/click handler with zero delay
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleTouch = (e: TouchEvent) => {
+      e.preventDefault();
+      handleJump();
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      e.preventDefault();
+      handleJump();
+    };
+
+    canvas.addEventListener("touchstart", handleTouch, { passive: false });
+    canvas.addEventListener("mousedown", handleClick);
+
+    return () => {
+      canvas.removeEventListener("touchstart", handleTouch);
+      canvas.removeEventListener("mousedown", handleClick);
+    };
+  }, [handleJump]);
 
   const drawGlossyPipe = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, isTop: boolean) => {
     const capHeight = 25;
     const capOverhang = 8;
 
-    // Main pipe body gradient
     const pipeGradient = ctx.createLinearGradient(x, 0, x + width, 0);
     pipeGradient.addColorStop(0, "#3d7a22");
     pipeGradient.addColorStop(0.2, "#5cb336");
@@ -88,7 +138,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     pipeGradient.addColorStop(0.8, "#5cb336");
     pipeGradient.addColorStop(1, "#3d7a22");
 
-    // Draw pipe body
     ctx.fillStyle = pipeGradient;
     if (isTop) {
       ctx.fillRect(x, y, width, height - capHeight);
@@ -96,7 +145,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.fillRect(x, y + capHeight, width, height - capHeight);
     }
 
-    // Pipe cap gradient (more glossy)
     const capGradient = ctx.createLinearGradient(x - capOverhang, 0, x + width + capOverhang, 0);
     capGradient.addColorStop(0, "#2d6018");
     capGradient.addColorStop(0.15, "#4a9c2a");
@@ -109,17 +157,14 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     ctx.fillStyle = capGradient;
     if (isTop) {
       ctx.fillRect(x - capOverhang, height - capHeight, width + capOverhang * 2, capHeight);
-      // Highlight on cap
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.fillRect(x - capOverhang + 5, height - capHeight + 3, width + capOverhang * 2 - 10, 6);
     } else {
       ctx.fillRect(x - capOverhang, y, width + capOverhang * 2, capHeight);
-      // Highlight on cap
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.fillRect(x - capOverhang + 5, y + 3, width + capOverhang * 2 - 10, 6);
     }
 
-    // Glossy highlight on pipe body
     ctx.fillStyle = "rgba(255,255,255,0.15)";
     if (isTop) {
       ctx.fillRect(x + 8, y, 12, height - capHeight);
@@ -129,11 +174,10 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   }, []);
 
   const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, y: number, type: CharacterType) => {
-    const x = 100;
+    const x = canvasSize.width * 0.25;
     ctx.save();
     
     if (type === "bird") {
-      // Glossy yellow bird
       const birdGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
       birdGradient.addColorStop(0, "#fff8b3");
       birdGradient.addColorStop(0.3, "#ffeb3b");
@@ -150,13 +194,11 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // Glossy highlight
       ctx.beginPath();
       ctx.ellipse(x - 5, y - 8, 8, 5, -0.3, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.6)";
       ctx.fill();
       
-      // Eye
       ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(x + 8, y - 5, 6, 0, Math.PI * 2);
@@ -171,7 +213,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.fillStyle = "white";
       ctx.fill();
       
-      // Beak
       ctx.beginPath();
       ctx.moveTo(x + 14, y + 2);
       ctx.lineTo(x + 26, y + 5);
@@ -179,7 +220,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.fillStyle = "#ff5722";
       ctx.fill();
     } else if (type === "soccer") {
-      // Soccer ball
       const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
       ballGradient.addColorStop(0.7, "#e0e0e0");
@@ -195,10 +235,9 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // Pentagon pattern
       ctx.fillStyle = "#212121";
       const angles = [0, 72, 144, 216, 288];
-      angles.forEach((angle, i) => {
+      angles.forEach((angle) => {
         const rad = (angle * Math.PI) / 180;
         const px = x + Math.cos(rad) * 10;
         const py = y + Math.sin(rad) * 10;
@@ -210,14 +249,12 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
       
-      // Glossy highlight
       ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.fill();
     } else if (type === "baseball") {
-      // Baseball
       const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
       ballGradient.addColorStop(0.6, "#f5f5f5");
@@ -233,7 +270,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // Red stitching
       ctx.strokeStyle = "#c62828";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -243,14 +279,12 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.arc(x + 10, y, 12, Math.PI - 0.8, Math.PI + 0.8);
       ctx.stroke();
       
-      // Glossy highlight
       ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.fill();
     } else if (type === "tennis") {
-      // Tennis ball
       const ballGradient = ctx.createRadialGradient(x - 5, y - 8, 2, x, y, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#e8ff59");
       ballGradient.addColorStop(0.5, "#c6dc00");
@@ -266,7 +300,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // White curved lines
       ctx.strokeStyle = "rgba(255,255,255,0.8)";
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -276,18 +309,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.arc(x + 14, y, 18, Math.PI - 0.6, Math.PI + 0.6);
       ctx.stroke();
       
-      // Fuzzy texture effect
       ctx.shadowBlur = 0;
-      for (let i = 0; i < 20; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * BIRD_RADIUS;
-        ctx.beginPath();
-        ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,255,255,0.3)";
-        ctx.fill();
-      }
-      
-      // Glossy highlight
       ctx.beginPath();
       ctx.ellipse(x - 6, y - 10, 6, 4, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -295,7 +317,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     }
     
     ctx.restore();
-  }, []);
+  }, [canvasSize.width]);
 
   const loop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -305,11 +327,9 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw background image
     if (backgroundImageRef.current) {
       ctx.drawImage(backgroundImageRef.current, 0, 0, canvas.width, canvas.height);
     } else {
-      // Fallback gradient
       const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       bgGradient.addColorStop(0, "#4a90d9");
       bgGradient.addColorStop(0.5, "#87ceeb");
@@ -318,33 +338,30 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
+    const birdX = canvas.width * 0.25;
+
     if (gameState.current.isGameRunning) {
-      // Physics
       gameState.current.velocity += gameState.current.gravity;
       gameState.current.birdY += gameState.current.velocity;
 
-      // Generate pipes
       gameState.current.frameCount++;
       if (gameState.current.frameCount % 100 === 0) {
         const gapY = 150 + Math.random() * (canvas.height - 350);
         gameState.current.pipes.push({ x: canvas.width, gapY, passed: false });
       }
 
-      // Update pipes
       gameState.current.pipes = gameState.current.pipes.filter(pipe => pipe.x > -PIPE_WIDTH);
       gameState.current.pipes.forEach(pipe => {
         pipe.x -= PIPE_SPEED;
 
-        // Score
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < 100) {
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < birdX) {
           pipe.passed = true;
           gameState.current.score++;
           setScore(gameState.current.score);
         }
 
-        // Collision detection
-        const birdLeft = 100 - BIRD_RADIUS;
-        const birdRight = 100 + BIRD_RADIUS;
+        const birdLeft = birdX - BIRD_RADIUS;
+        const birdRight = birdX + BIRD_RADIUS;
         const birdTop = gameState.current.birdY - BIRD_RADIUS;
         const birdBottom = gameState.current.birdY + BIRD_RADIUS;
 
@@ -357,7 +374,6 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         }
       });
 
-      // Floor/ceiling collision
       if (gameState.current.birdY + BIRD_RADIUS > canvas.height || gameState.current.birdY - BIRD_RADIUS < 0) {
         gameState.current.isGameRunning = false;
         setIsGameOver(true);
@@ -365,19 +381,15 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       }
     }
 
-    // Draw pipes
     gameState.current.pipes.forEach(pipe => {
-      // Top pipe
       drawGlossyPipe(ctx, pipe.x, 0, PIPE_WIDTH, pipe.gapY - PIPE_GAP / 2, true);
-      // Bottom pipe
       drawGlossyPipe(ctx, pipe.x, pipe.gapY + PIPE_GAP / 2, PIPE_WIDTH, canvas.height - (pipe.gapY + PIPE_GAP / 2), false);
     });
 
-    // Draw character
     drawCharacter(ctx, gameState.current.birdY, character);
 
     requestRef.current = requestAnimationFrame(loop);
-  }, [character, drawGlossyPipe, drawCharacter]);
+  }, [character, canvasSize, drawGlossyPipe, drawCharacter]);
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(loop);
@@ -394,38 +406,35 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   ];
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center p-4">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50"
-        style={{ boxShadow: "0 0 40px rgba(125, 224, 0, 0.4), 0 10px 40px rgba(0,0,0,0.3)" }}
+        className="relative overflow-hidden"
+        style={{ boxShadow: "0 0 60px rgba(0,0,0,0.5)" }}
       >
         <canvas
           ref={canvasRef}
-          width={360}
-          height={640}
-          onClick={handleJump}
-          className="block cursor-pointer touch-manipulation"
-          style={{ maxWidth: '100%', maxHeight: '80vh' }}
+          width={canvasSize.width}
+          height={canvasSize.height}
+          className="block cursor-pointer touch-manipulation select-none"
+          style={{ touchAction: "none" }}
         />
 
-        {/* Start Overlay */}
         {!isPlaying && !isGameOver && !showCharacterSelect && (
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center">
-            <GlossyButton onClick={resetGame} className="mb-4">
+            <GlossyButton onClick={resetGame} className="mb-4" data-testid="button-start-game">
               <Play className="w-6 h-6" /> Jogar
             </GlossyButton>
-            <GlossyButton onClick={() => setShowCharacterSelect(true)} className="mb-4">
+            <GlossyButton onClick={() => setShowCharacterSelect(true)} className="mb-4" data-testid="button-character">
               <Settings className="w-5 h-5" /> Personagem
             </GlossyButton>
-            <button onClick={onExit} className="text-white hover:underline mt-4 font-bold drop-shadow-md">
+            <button onClick={onExit} className="text-white hover:underline mt-4 font-bold drop-shadow-md" data-testid="button-back-menu">
               Voltar ao Menu
             </button>
           </div>
         )}
 
-        {/* Character Select */}
         {showCharacterSelect && !isPlaying && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4">
             <h2 className="text-2xl font-display font-black text-white drop-shadow-lg mb-6">
@@ -438,23 +447,23 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setCharacter(opt.type)}
-                  className={`px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+                  className={`px-4 py-3 rounded-lg font-bold text-sm transition-all ${
                     character === opt.type
                       ? "bg-gradient-to-b from-lime-300 to-lime-500 text-green-900 shadow-lg border-2 border-white"
                       : "bg-white/80 text-gray-700 hover:bg-white"
                   }`}
+                  data-testid={`button-character-${opt.type}`}
                 >
                   {opt.label}
                 </motion.button>
               ))}
             </div>
-            <GlossyButton onClick={() => setShowCharacterSelect(false)}>
+            <GlossyButton onClick={() => setShowCharacterSelect(false)} data-testid="button-back-character">
               Voltar
             </GlossyButton>
           </div>
         )}
 
-        {/* Game Over Overlay */}
         {isGameOver && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
             <h2 className="text-4xl font-display font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] mb-4 transform -rotate-2">
@@ -463,16 +472,15 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
             <p className="text-2xl text-white font-bold mb-8 drop-shadow-md">
               Pontos: {score}
             </p>
-            <GlossyButton onClick={resetGame} className="mb-4">
+            <GlossyButton onClick={resetGame} className="mb-4" data-testid="button-try-again">
               <RotateCcw className="w-5 h-5" /> Tentar de Novo
             </GlossyButton>
-            <button onClick={onExit} className="text-white font-bold hover:underline mt-4 drop-shadow-md">
+            <button onClick={onExit} className="text-white font-bold hover:underline mt-4 drop-shadow-md" data-testid="button-exit">
               Sair
             </button>
           </div>
         )}
         
-        {/* Score Display */}
         {isPlaying && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 font-display font-black text-5xl text-white drop-shadow-[0_4px_0_rgba(0,0,0,0.3)] pointer-events-none select-none">
             {score}

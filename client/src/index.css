@@ -6,9 +6,9 @@
 
 :root {
   /* Lime Green Glossy Palette */
-  --background: 90 100% 50%;       /* Lime Green */
-  --foreground: 120 50% 15%;       /* Dark Green text */
-  --primary: 90 100% 45%;          /* Lime Green Primary */
+  --background: 90 100% 50%;
+  --foreground: 120 50% 15%;
+  --primary: 90 100% 45%;
   --primary-foreground: 0 0% 100%;
   --card: 0 0% 100%;
   --card-foreground: 120 50% 20%;
@@ -18,16 +18,15 @@
   --secondary-foreground: 90 100% 35%;
   --muted: 90 30% 96%;
   --muted-foreground: 90 20% 40%;
-  --accent: 90 100% 50%;           /* Lime accent */
+  --accent: 90 100% 50%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
   --border: 90 60% 85%;
   --input: 90 40% 96%;
   --ring: 90 100% 50%;
-  --radius: 1.5rem;
+  --radius: 0.5rem;
 
-  /* Custom Font Variables */
   --font-display: 'Varela Round', sans-serif;
   --font-body: 'Nunito', sans-serif;
 }
@@ -36,7 +35,6 @@
   body {
     @apply antialiased text-foreground;
     font-family: var(--font-body);
-    /* Lime Green Glossy Gradient */
     background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
     overflow-x: hidden;
@@ -60,7 +58,7 @@
     text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
   }
   
-  /* Lime Green Glossy Button */
+  /* Lime Green Glossy Square Button */
   .glossy-button {
     background: linear-gradient(180deg, #e8ffd1 0%, #b4f03b 49%, #7de000 51%, #a8e063 100%);
     box-shadow: 
@@ -69,6 +67,7 @@
       inset 0 1px 0 rgba(255,255,255,0.8),
       inset 0 -1px 0 rgba(0,0,0,0.1);
     border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
   }
   
   .glossy-button:hover {
@@ -86,14 +85,5 @@
       0 2px 4px rgba(0,0,0,0.15),
       inset 0 2px 4px rgba(0,0,0,0.1);
     transform: translateY(1px);
-  }
-
-  /* Glossy Pipe Style */
-  .glossy-pipe {
-    background: linear-gradient(90deg, #4a8c2a 0%, #6abf40 30%, #8cd660 50%, #6abf40 70%, #4a8c2a 100%);
-    box-shadow: 
-      inset 2px 0 6px rgba(255,255,255,0.4),
-      inset -2px 0 6px rgba(0,0,0,0.2),
-      2px 0 8px rgba(0,0,0,0.3);
   }
 }

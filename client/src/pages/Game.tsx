@@ -5,7 +5,7 @@ export default function Game() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-black/10 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black flex items-center justify-center">
       <GameCanvas onExit={() => setLocation("/")} />
     </div>
   );
