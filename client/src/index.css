@@ -35,15 +35,16 @@
 @layer base {
   body {
     @apply antialiased text-foreground;
-    font-family: var(--font-body);
-    font-weight: 300;
+    font-family: 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 100;
     background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
+    font-family: 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 100;
     @apply tracking-tight;
   }
 }
