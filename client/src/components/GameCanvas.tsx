@@ -161,6 +161,13 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     }
   }, []);
 
+  // Update Game State when it starts (for multiplayer synchronization)
+  useEffect(() => {
+    if (isPlaying && !isGameOver) {
+      gameState.current.isGameRunning = true;
+    }
+  }, [isPlaying, isGameOver]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

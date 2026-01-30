@@ -11,6 +11,7 @@ import Game from "@/pages/Game";
 import OnlineMenu from "@/pages/OnlineMenu";
 import CreateRoom from "@/pages/CreateRoom";
 import JoinRoom from "@/pages/JoinRoom";
+import OnlineGame from "@/pages/OnlineGame";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
         <Route path="/online" component={OnlineMenu} />
         <Route path="/online/create" component={CreateRoom} />
         <Route path="/online/join" component={JoinRoom} />
+        <Route path="/online/game/:code" component={OnlineGame} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>

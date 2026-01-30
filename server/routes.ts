@@ -102,7 +102,14 @@ export async function registerRoutes(
           }
         } else if (data.type === "start" && ws === state.host) {
           state.started = true;
-          broadcast();
+          // Broadcast start message to all clients to trigger countdown
+          const startMsg = JSON.stringify({ type: "sync", players: Array.from(state.players.entries()).map(([socket, p]) => ({
+            id: socket === state.host ? "host" : "player",
+            ...p
+          })), started: true });
+          state.players.forEach((_, socket) => {
+            if (socket.readyState === WebSocket.OPEN) socket.send(startMsg);
+          });
         }
       } catch (e) {}
     });
