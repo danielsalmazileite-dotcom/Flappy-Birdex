@@ -27,8 +27,8 @@
   --ring: 90 100% 50%;
   --radius: 0.5rem;
 
-  --font-display: 'Varela Round', sans-serif;
-  --font-body: 'Nunito', sans-serif;
+  --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
