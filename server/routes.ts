@@ -125,5 +125,15 @@ export async function registerRoutes(
     });
   });
 
+  httpServer.on("upgrade", (request, socket, head) => {
+    const pathname = new URL(request.url!, `http://${request.headers.host}`).pathname;
+
+    if (pathname === "/ws") {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit("connection", ws, request);
+      });
+    }
+  });
+
   return httpServer;
 }
