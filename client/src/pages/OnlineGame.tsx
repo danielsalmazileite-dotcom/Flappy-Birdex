@@ -60,6 +60,39 @@ export default function OnlineGame() {
     }
   };
 
+  const [remotePlayers, setRemotePlayers] = useState<Array<{ y: number; char: string; nick: string; id: string }>>([]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "player_update" && data.playerId !== socket.id) {
+        setRemotePlayers(prev => {
+          const filtered = prev.filter(p => p.id !== data.playerId);
+          return [...filtered, { 
+            id: data.playerId, 
+            y: data.y, 
+            char: data.character, 
+            nick: data.nickname 
+          }];
+        });
+      }
+    };
+
+    socket.addEventListener("message", handleMessage);
+    return () => socket.removeEventListener("message", handleMessage);
+  }, [socket]);
+
+  const handlePositionUpdate = (y: number) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: "update_position",
+        y
+      }));
+    }
+  };
+
   if (!gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -121,8 +154,12 @@ export default function OnlineGame() {
 
   return (
     <div className="h-screen w-screen overflow-hidden">
-      <GameCanvas onExit={() => setLocation("/online")} />
-      {/* TODO: Add multiplayer sync overlays here */}
+      <GameCanvas 
+        onExit={() => setLocation("/online")} 
+        isMultiplayer={true}
+        onPositionUpdate={handlePositionUpdate}
+        remotePlayers={remotePlayers}
+      />
     </div>
   );
 }
