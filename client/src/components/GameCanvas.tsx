@@ -658,10 +658,27 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       drawGlossyPipe(ctx, pipe.x, pipe.gapY + PIPE_GAP / 2, PIPE_WIDTH, canvas.height - (pipe.gapY + PIPE_GAP / 2), false);
     });
 
+    // Render local player
     drawCharacter(ctx, gameState.current.birdY, character, fireAnimationRef.current);
 
+    // Render remote players
+    if (isMultiplayer && remotePlayers) {
+      remotePlayers.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = 0.6; // Slightly transparent for other players
+        drawCharacter(ctx, p.y, p.char as CharacterType, fireAnimationRef.current);
+        
+        // Draw nickname
+        ctx.fillStyle = "white";
+        ctx.font = "12px 'Segoe UI Light'";
+        ctx.textAlign = "center";
+        ctx.fillText(p.nick, canvas.width * 0.25, p.y - 30);
+        ctx.restore();
+      });
+    }
+
     requestRef.current = requestAnimationFrame(loop);
-  }, [character, canvasSize, drawGlossyPipe, drawCharacter, isHardcore]);
+  }, [character, canvasSize, drawGlossyPipe, drawCharacter, isHardcore, isMultiplayer, remotePlayers]);
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(loop);
