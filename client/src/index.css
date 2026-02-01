@@ -2,6 +2,14 @@
 
 @font-face {
   font-family: 'New Rodin';
+  src: url('./assets/fonts/FOT-NewRodin Pro M.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'New Rodin';
   src: url('./assets/fonts/FOT-NewRodin Pro EB.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
@@ -44,7 +52,7 @@
   body {
     @apply antialiased text-foreground;
     font-family: var(--font-body);
-    font-weight: 400;
+    font-weight: 500;
     color: #0b2a5a;
     background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
@@ -53,7 +61,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 800;
     @apply tracking-tight;
   }
 }
