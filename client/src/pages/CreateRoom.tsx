@@ -6,11 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateRoom } from "@/hooks/use-rooms";
 import { GlossyButton } from "@/components/GlossyButton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/components/ui/input";
 import { insertRoomSchema } from "@shared/schema";
 import { ArrowLeft, Loader2, Copy, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { motion } from "framer-motion";
 
 // Extend schema for form validation
 const formSchema = insertRoomSchema.extend({
@@ -83,7 +84,7 @@ export default function CreateRoom() {
               Entrar na Sala
             </GlossyButton>
 
-            <GlossyButton onClick={() => setLocation("/")} variant="secondary" className="w-full opacity-50">
+            <GlossyButton onClick={() => setLocation("/")} className="w-full opacity-50">
               Cancel
             </GlossyButton>
           </div>

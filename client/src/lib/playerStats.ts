@@ -7,27 +7,50 @@ export interface PlayerStats {
   onlineMatchesWon: number;
 }
 
+import { touchLocalProgressUpdatedAt } from "./cloudProgress";
+
 const STATS_KEY = "flappi_birdex_stats";
+
+const DEFAULT_STATS: PlayerStats = {
+  totalFlaps: 0,
+  bestScore: 0,
+  bestHardcoreScore: 0,
+  onlineMatchesPlayed: 0,
+  onlineMatchesWon: 0,
+};
+
+function toNumberOrZero(v: unknown): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+function coerceStats(value: unknown): PlayerStats | null {
+  if (!value || typeof value !== "object") return null;
+  const obj = value as any;
+  return {
+    totalFlaps: toNumberOrZero(obj.totalFlaps),
+    bestScore: toNumberOrZero(obj.bestScore),
+    bestHardcoreScore: toNumberOrZero(obj.bestHardcoreScore),
+    onlineMatchesPlayed: toNumberOrZero(obj.onlineMatchesPlayed),
+    onlineMatchesWon: toNumberOrZero(obj.onlineMatchesWon),
+  };
+}
 
 export function getPlayerStats(): PlayerStats {
   try {
     const saved = localStorage.getItem(STATS_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      const coerced = coerceStats(parsed);
+      if (coerced) return coerced;
     }
   } catch {}
-  return {
-    totalFlaps: 0,
-    bestScore: 0,
-    bestHardcoreScore: 0,
-    onlineMatchesPlayed: 0,
-    onlineMatchesWon: 0
-  };
+  return DEFAULT_STATS;
 }
 
 export function savePlayerStats(stats: PlayerStats): void {
   try {
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    touchLocalProgressUpdatedAt();
   } catch {}
 }
 

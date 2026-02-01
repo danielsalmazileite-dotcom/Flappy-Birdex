@@ -13,15 +13,45 @@ import {
 
 interface GameCanvasProps {
   onExit: () => void;
+  isMultiplayer?: boolean;
+  onPositionUpdate?: (y: number) => void;
+  onPlayerDead?: () => void;
+  remotePlayers?: Array<{ y: number; char: string; nick: string; id: string; slot?: number; alive?: boolean }>;
+  seed?: number;
+  startTime?: number | null;
+  playerSlot?: number;
+  isSpectating?: boolean;
 }
 
 interface Pipe {
   x: number;
   gapY: number;
   passed: boolean;
+  index?: number;
 }
 
-export function GameCanvas({ onExit }: GameCanvasProps) {
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function GameCanvas({
+  onExit,
+  isMultiplayer = false,
+  onPositionUpdate,
+  onPlayerDead,
+  remotePlayers,
+  seed,
+  startTime,
+  playerSlot,
+  isSpectating = false,
+}: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundImageRef = useRef<HTMLImageElement | null>(null);
@@ -71,6 +101,13 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     pipeSpeed: 3,
     flapsThisGame: 0
   });
+
+  const lastFrameTimeRef = useRef<number | null>(null);
+  const lastSentYRef = useRef<number | null>(null);
+  const lastSentAtRef = useRef<number>(0);
+  const spawnedPipesRef = useRef<number>(0);
+  const remoteMotionRef = useRef(new Map<string, { lastY: number; velocity: number }>());
+  const sentDeadRef = useRef(false);
 
   const requestRef = useRef<number>();
 
@@ -142,7 +179,18 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     setScore(0);
     setShowCharacterSelect(false);
     setSessionFlaps(0);
+
+    lastFrameTimeRef.current = null;
+    spawnedPipesRef.current = 0;
+    sentDeadRef.current = false;
   };
+
+  const reportDeadOnce = useCallback(() => {
+    if (!isMultiplayer) return;
+    if (sentDeadRef.current) return;
+    sentDeadRef.current = true;
+    onPlayerDead?.();
+  }, [isMultiplayer, onPlayerDead]);
 
   const endGame = () => {
     // Stop music
@@ -154,19 +202,20 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
   };
 
   const handleJump = useCallback(() => {
+    if (isMultiplayer && isSpectating) return;
     if (gameState.current.isGameRunning) {
       gameState.current.velocity = gameState.current.jumpStrength;
       gameState.current.flapsThisGame++;
-      setSessionFlaps(prev => prev + 1);
+      setSessionFlaps((prev: number) => prev + 1);
     }
-  }, []);
+  }, [isMultiplayer, isSpectating]);
 
   // Update Game State when it starts (for multiplayer synchronization)
   useEffect(() => {
-    if (isPlaying && !isGameOver) {
+    if (isPlaying && !isGameOver && !(isMultiplayer && isSpectating)) {
       gameState.current.isGameRunning = true;
     }
-  }, [isPlaying, isGameOver]);
+  }, [isPlaying, isGameOver, isMultiplayer, isSpectating]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -248,11 +297,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     }
   }, []);
 
-  const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, y: number, type: CharacterType, frame: number) => {
-    const x = canvasSize.width * 0.25;
-    const velocity = gameState.current.velocity;
-    // Calculate rotation based on velocity (tilt)
-    const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, velocity * 0.1));
+  const drawCharacter = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number, type: CharacterType, frame: number, rotation: number, slot?: number) => {
     
     ctx.save();
     ctx.translate(x, y);
@@ -260,19 +305,27 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     
     // Character Body first
     if (type === "bird" || type === "birdglasses") {
+      const baseBird = {
+        light: "#fff8b3",
+        main: "#ffeb3b",
+        dark: "#ffc107",
+        stroke: "#e65100",
+        shadow: "rgba(255,200,0,0.5)",
+      };
+
       const birdGradient = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
-      birdGradient.addColorStop(0, "#fff8b3");
-      birdGradient.addColorStop(0.3, "#ffeb3b");
-      birdGradient.addColorStop(0.7, "#ffc107");
-      birdGradient.addColorStop(1, "#ff9800");
+      birdGradient.addColorStop(0, baseBird.light);
+      birdGradient.addColorStop(0.3, baseBird.main);
+      birdGradient.addColorStop(0.7, baseBird.dark);
+      birdGradient.addColorStop(1, baseBird.stroke);
       
       ctx.beginPath();
       ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = birdGradient;
       ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(255,200,0,0.5)";
+      ctx.shadowColor = baseBird.shadow;
       ctx.fill();
-      ctx.strokeStyle = "#e65100";
+      ctx.strokeStyle = baseBird.stroke;
       ctx.lineWidth = 2;
       ctx.stroke();
       
@@ -324,74 +377,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.lineTo(14, 10);
       ctx.fillStyle = "#ff5722";
       ctx.fill();
-    } else if (type === "soccer") {
-      const ballGradient = ctx.createRadialGradient(-6, -8, 3, 0, 0, BIRD_RADIUS);
-      ballGradient.addColorStop(0, "#ffffff");
-      ballGradient.addColorStop(0.5, "#f5f5f5");
-      ballGradient.addColorStop(0.8, "#e0e0e0");
-      ballGradient.addColorStop(1, "#c0c0c0");
-      
-      ctx.beginPath();
-      ctx.arc(0, 0, BIRD_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = ballGradient;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "rgba(0,0,0,0.4)";
-      ctx.fill();
-      ctx.strokeStyle = "#333";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "#1a1a1a";
-      ctx.strokeStyle = "#1a1a1a";
       ctx.lineWidth = 1;
-
-      // Middle pentagon
-      ctx.beginPath();
-      for (let i = 0; i < 5; i++) {
-        const angle = (i * 72 - 90) * Math.PI / 180;
-        const px = Math.cos(angle) * 7;
-        const py = Math.sin(angle) * 7;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
-      
-      // Connect to outer hexes/pents
-      const hexAngles = [0, 72, 144, 216, 288];
-      hexAngles.forEach((angle) => {
-        const rad = (angle - 90) * Math.PI / 180;
-        const cx = Math.cos(rad) * 14;
-        const cy = Math.sin(rad) * 14;
-        
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const a = ((i * 60) + angle) * Math.PI / 180;
-          const px = cx + Math.cos(a) * 5;
-          const py = cy + Math.sin(a) * 5;
-          
-          // Clip to ball circle
-          const dist = Math.sqrt(px*px + py*py);
-          if (dist < BIRD_RADIUS) {
-            if (i === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-        }
-        ctx.closePath();
-        ctx.fill();
-        
-        // Stitching lines
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(rad)*7, Math.sin(rad)*7);
-        ctx.lineTo(cx, cy);
-        ctx.stroke();
-      });
-      
-      ctx.beginPath();
-      ctx.ellipse(-7, -10, 7, 4, -0.4, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      ctx.fill();
     } else if (type === "baseball") {
       const ballGradient = ctx.createRadialGradient(-6, -8, 3, 0, 0, BIRD_RADIUS);
       ballGradient.addColorStop(0, "#ffffff");
@@ -594,6 +580,11 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const now = performance.now();
+    const dtSecRaw = lastFrameTimeRef.current == null ? 1 / 60 : (now - lastFrameTimeRef.current) / 1000;
+    lastFrameTimeRef.current = now;
+    const dtScale = Math.min(2, Math.max(0, dtSecRaw * 60));
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     fireAnimationRef.current++;
 
@@ -608,77 +599,147 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    const birdX = canvas.width * 0.25;
+    const gameplayBirdX = canvas.width * 0.25;
+    const baseBirdX = gameplayBirdX;
 
-    if (gameState.current.isGameRunning) {
-      gameState.current.velocity += gameState.current.gravity;
-      gameState.current.birdY += gameState.current.velocity;
+    const speedPxPerSec = gameState.current.pipeSpeed * 60;
 
-      gameState.current.frameCount++;
-      if (gameState.current.frameCount % (isHardcore ? 50 : 100) === 0) {
-        const gapY = 150 + Math.random() * (canvas.height - 350);
-        gameState.current.pipes.push({ x: canvas.width, gapY, passed: false });
+    const isRoundStarted = isMultiplayer && typeof startTime === "number" && Date.now() >= startTime;
+
+    // Multiplayer world update should keep running even if the local player is dead (spectating)
+    if (isRoundStarted && typeof seed === "number" && typeof startTime === "number") {
+      const pipeIntervalMs = 1600;
+      const elapsedMs = Date.now() - startTime;
+      const expected = elapsedMs > 0 ? Math.floor(elapsedMs / pipeIntervalMs) + 1 : 0;
+      while (spawnedPipesRef.current < expected) {
+        const i = spawnedPipesRef.current;
+        const rand = mulberry32((seed + i * 1013904223) >>> 0)();
+        const gapY = 150 + rand * (canvas.height - 350);
+        gameState.current.pipes.push({ x: canvas.width, gapY, passed: false, index: i });
+        spawnedPipesRef.current++;
       }
 
-      gameState.current.pipes = gameState.current.pipes.filter(pipe => pipe.x > -PIPE_WIDTH);
-      gameState.current.pipes.forEach(pipe => {
-        pipe.x -= gameState.current.pipeSpeed;
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      gameState.current.pipes.forEach((pipe: Pipe) => {
+        const i = typeof pipe.index === "number" ? pipe.index : 0;
+        const spawnSec = (i * 1600) / 1000;
+        pipe.x = canvas.width - speedPxPerSec * Math.max(0, elapsedSec - spawnSec);
+      });
+    }
 
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < birdX) {
+    if (gameState.current.isGameRunning) {
+      if (isMultiplayer && isSpectating) {
+        gameState.current.isGameRunning = false;
+      }
+
+      gameState.current.velocity += gameState.current.gravity * dtScale;
+      gameState.current.birdY += gameState.current.velocity * dtScale;
+
+      gameState.current.frameCount++;
+
+      if (!isMultiplayer) {
+        if (gameState.current.frameCount % (isHardcore ? 50 : 100) === 0) {
+          const gapY = 150 + Math.random() * (canvas.height - 350);
+          gameState.current.pipes.push({ x: canvas.width, gapY, passed: false });
+        }
+      }
+
+      if (!isMultiplayer) {
+        gameState.current.pipes.forEach((pipe: Pipe) => {
+          pipe.x -= gameState.current.pipeSpeed * dtScale;
+        });
+      }
+
+      gameState.current.pipes = gameState.current.pipes.filter((pipe: Pipe) => pipe.x > -PIPE_WIDTH);
+      gameState.current.pipes.forEach((pipe: Pipe) => {
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < gameplayBirdX) {
           pipe.passed = true;
           gameState.current.score++;
           setScore(gameState.current.score);
         }
 
-        const birdLeft = birdX - BIRD_RADIUS;
-        const birdRight = birdX + BIRD_RADIUS;
+        const birdLeft = gameplayBirdX - BIRD_RADIUS;
+        const birdRight = gameplayBirdX + BIRD_RADIUS;
         const birdTop = gameState.current.birdY - BIRD_RADIUS;
         const birdBottom = gameState.current.birdY + BIRD_RADIUS;
 
         if (birdRight > pipe.x && birdLeft < pipe.x + PIPE_WIDTH) {
           if (birdTop < pipe.gapY - PIPE_GAP / 2 || birdBottom > pipe.gapY + PIPE_GAP / 2) {
-            gameState.current.isGameRunning = false;
-            endGame();
-            setIsGameOver(true);
-            setIsPlaying(false);
+            if (isMultiplayer) {
+              gameState.current.isGameRunning = false;
+              reportDeadOnce();
+            } else {
+              gameState.current.isGameRunning = false;
+              endGame();
+              setIsGameOver(true);
+              setIsPlaying(false);
+            }
           }
         }
       });
 
       if (gameState.current.birdY + BIRD_RADIUS > canvas.height || gameState.current.birdY - BIRD_RADIUS < 0) {
-        gameState.current.isGameRunning = false;
-        endGame();
-        setIsGameOver(true);
-        setIsPlaying(false);
+        if (isMultiplayer) {
+          gameState.current.isGameRunning = false;
+          reportDeadOnce();
+        } else {
+          gameState.current.isGameRunning = false;
+          endGame();
+          setIsGameOver(true);
+          setIsPlaying(false);
+        }
+      }
+
+      if (isMultiplayer && onPositionUpdate) {
+        const nowMs = Date.now();
+        const shouldSend = nowMs - lastSentAtRef.current > 50;
+        const lastY = lastSentYRef.current;
+        if (shouldSend && (lastY == null || Math.abs(lastY - gameState.current.birdY) >= 0.5)) {
+          lastSentAtRef.current = nowMs;
+          lastSentYRef.current = gameState.current.birdY;
+          onPositionUpdate(gameState.current.birdY);
+        }
       }
     }
 
-    gameState.current.pipes.forEach(pipe => {
+    gameState.current.pipes.forEach((pipe: Pipe) => {
       drawGlossyPipe(ctx, pipe.x, 0, PIPE_WIDTH, pipe.gapY - PIPE_GAP / 2, true);
       drawGlossyPipe(ctx, pipe.x, pipe.gapY + PIPE_GAP / 2, PIPE_WIDTH, canvas.height - (pipe.gapY + PIPE_GAP / 2), false);
     });
 
-    // Render local player
-    drawCharacter(ctx, gameState.current.birdY, character, fireAnimationRef.current);
+    const localRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, gameState.current.velocity * 0.1));
+    // Local player is always drawn at the gameplay hitbox X to avoid "weird" collisions.
+    drawCharacter(ctx, gameplayBirdX, gameState.current.birdY, character, fireAnimationRef.current, localRotation, playerSlot ?? 1);
 
     // Render remote players
     if (isMultiplayer && remotePlayers) {
       remotePlayers.forEach(p => {
+        const remoteSlot = typeof p.slot === "number" ? p.slot : undefined;
+        const remoteX = baseBirdX + ((remoteSlot ?? 1) - 1) * 18;
+
+        const isAlive = p.alive !== false;
+
+        const mem = remoteMotionRef.current.get(p.id);
+        const prevY = mem ? mem.lastY : p.y;
+        const vel = isAlive ? (p.y - prevY) / Math.max(1, dtSecRaw * 60) : 0;
+        remoteMotionRef.current.set(p.id, { lastY: p.y, velocity: vel });
+        const remoteRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, vel * 0.08));
+
         ctx.save();
-        ctx.globalAlpha = 0.6; // Slightly transparent for other players
-        drawCharacter(ctx, p.y, p.char as CharacterType, fireAnimationRef.current);
+        ctx.globalAlpha = isAlive ? 0.85 : 0.25;
+        drawCharacter(ctx, remoteX, p.y, p.char as CharacterType, fireAnimationRef.current, remoteRotation, remoteSlot);
         
         // Draw nickname
         ctx.fillStyle = "white";
         ctx.font = "12px 'Segoe UI Light'";
         ctx.textAlign = "center";
-        ctx.fillText(p.nick, canvas.width * 0.25, p.y - 30);
+        ctx.fillText(p.nick, remoteX, p.y - 30);
         ctx.restore();
       });
     }
 
     requestRef.current = requestAnimationFrame(loop);
-  }, [character, canvasSize, drawGlossyPipe, drawCharacter, isHardcore, isMultiplayer, remotePlayers]);
+  }, [character, canvasSize, drawGlossyPipe, drawCharacter, isHardcore, isMultiplayer, onPositionUpdate, remotePlayers, seed, startTime]);
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(loop);
@@ -686,6 +747,15 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, [loop]);
+
+  useEffect(() => {
+    if (!isMultiplayer) return;
+    if (typeof startTime !== "number") return;
+    if (Date.now() < startTime) return;
+    if (isPlaying || isGameOver) return;
+
+    startGame(false);
+  }, [isMultiplayer, startTime, isPlaying, isGameOver]);
 
   const currentPageCharacters = CHARACTERS.filter(c => c.page === characterPage);
 
@@ -705,7 +775,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
           style={{ touchAction: "none" }}
         />
 
-        {!isPlaying && !isGameOver && !showCharacterSelect && (
+        {!isMultiplayer && !isPlaying && !isGameOver && !showCharacterSelect && (
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
             <GlossyButton onClick={() => startGame(false)} data-testid="button-start-game">
               <Play className="w-6 h-6" /> Jogar
@@ -735,7 +805,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
         )}
 
         <AnimatePresence>
-          {showCharacterSelect && !isPlaying && (
+          {showCharacterSelect && !isPlaying && !isMultiplayer && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -781,7 +851,7 @@ export function GameCanvas({ onExit }: GameCanvasProps) {
                       disabled={!isUnlocked}
                       className={`relative px-3 py-3 rounded-lg font-bold text-sm transition-all ${
                         isSelected && isUnlocked
-                          ? "bg-gradient-to-b from-lime-300 to-lime-500 text-green-900 shadow-lg border-2 border-white"
+                          ? "bg-gradient-to-b from-sky-200 to-sky-400 text-sky-950 shadow-lg border-2 border-white"
                           : isUnlocked
                           ? "bg-white/80 text-gray-700 hover:bg-white"
                           : "bg-gray-500/50 text-gray-300 cursor-not-allowed"

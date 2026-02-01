@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useJoinRoom } from "@/hooks/use-rooms";
 import { GlossyButton } from "@/components/GlossyButton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Input } from "@/components/ui/Input";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, Loader2, Lock } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
@@ -42,7 +42,7 @@ export default function JoinRoom() {
               Entrar na Sala
             </GlossyButton>
 
-            <GlossyButton onClick={() => setLocation("/")} variant="secondary" className="w-full opacity-50">
+            <GlossyButton onClick={() => setLocation("/")} className="w-full opacity-50">
               Leave Room
             </GlossyButton>
           </div>
