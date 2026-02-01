@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Varela+Round&display=swap');
 
+@font-face {
+  font-family: 'New Rodin';
+  src: url('./assets/fonts/FOT-NewRodin Pro EB.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -27,16 +35,16 @@
   --ring: 90 100% 50%;
   --radius: 0.5rem;
 
-  --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-thin: 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'New Rodin', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body: 'New Rodin', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-thin: 'New Rodin', 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
   body {
     @apply antialiased text-foreground;
-    font-family: 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-weight: 100;
+    font-family: var(--font-body);
+    font-weight: 800;
     color: #0b2a5a;
     background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
@@ -44,8 +52,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Segoe UI Light', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-weight: 100;
+    font-family: var(--font-display);
+    font-weight: 800;
     @apply tracking-tight;
   }
 }
