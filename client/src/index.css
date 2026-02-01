@@ -44,7 +44,7 @@
   body {
     @apply antialiased text-foreground;
     font-family: var(--font-body);
-    font-weight: 800;
+    font-weight: 400;
     color: #0b2a5a;
     background: linear-gradient(180deg, #b4f03b 0%, #7de000 30%, #a8e063 60%, #d4fc79 100%);
     min-height: 100vh;
@@ -53,7 +53,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 600;
     @apply tracking-tight;
   }
 }
