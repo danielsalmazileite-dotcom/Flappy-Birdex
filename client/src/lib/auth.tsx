@@ -18,6 +18,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const TOKEN_KEY = "flappi_auth_token";
 
+const API_BASE_URL = ((import.meta as any).env?.VITE_API_BASE_URL as string | undefined) || "";
+
+function buildApiUrl(path: string): string {
+  if (!API_BASE_URL) return path;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path}`;
+}
+
 function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -34,7 +41,7 @@ function setToken(token: string | null) {
 }
 
 async function apiJson(path: string, init?: RequestInit) {
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",

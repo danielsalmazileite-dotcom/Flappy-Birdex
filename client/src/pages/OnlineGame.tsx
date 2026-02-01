@@ -24,9 +24,13 @@ export default function OnlineGame() {
   useEffect(() => {
     if (!code) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const envWsBase = ((import.meta as any).env?.VITE_WS_BASE_URL as string | undefined) || "";
+    const wsBase = envWsBase.trim()
+      ? envWsBase.trim().replace(/\/$/, "")
+      : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
+
     const ws = new WebSocket(
-      `${protocol}//${window.location.host}/ws?code=${code}&nick=${encodeURIComponent(nickname)}&char=${encodeURIComponent(character)}`
+      `${wsBase}/ws?code=${code}&nick=${encodeURIComponent(nickname)}&char=${encodeURIComponent(character)}`
     );
 
     ws.onmessage = (event) => {

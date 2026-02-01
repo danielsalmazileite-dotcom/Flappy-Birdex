@@ -7,6 +7,13 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
+const allowedOrigins = new Set(
+  (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -22,6 +29,23 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.size === 0 || allowedOrigins.has(origin))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  next();
+});
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

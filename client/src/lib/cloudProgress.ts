@@ -8,6 +8,13 @@ export type CloudProgress = {
 
 const LOCAL_PROGRESS_UPDATED_AT_KEY = "flappi_progress_updated_at";
 
+const API_BASE_URL = ((import.meta as any).env?.VITE_API_BASE_URL as string | undefined) || "";
+
+function buildApiUrl(path: string): string {
+  if (!API_BASE_URL) return path;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path}`;
+}
+
 export function getLocalProgressUpdatedAt(): number {
   const raw = localStorage.getItem(LOCAL_PROGRESS_UPDATED_AT_KEY);
   const parsed = raw ? Number(raw) : 0;
@@ -60,7 +67,7 @@ function getToken(): string | null {
 }
 
 async function apiJson(path: string, init?: RequestInit) {
-  const res = await fetch(path, {
+  const res = await fetch(buildApiUrl(path), {
     ...init,
     headers: {
       "Content-Type": "application/json",

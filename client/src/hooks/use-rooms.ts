@@ -4,6 +4,13 @@ import { useToast } from "@/hooks/use-toast";
 import { type InsertRoom, type JoinRoomRequest } from "@shared/schema";
 import { z } from "zod";
 
+const API_BASE_URL = ((import.meta as any).env?.VITE_API_BASE_URL as string | undefined) || "";
+
+function buildApiUrl(path: string): string {
+  if (!API_BASE_URL) return path;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path}`;
+}
+
 export function useCreateRoom() {
   const { toast } = useToast();
 
@@ -12,7 +19,7 @@ export function useCreateRoom() {
       // Validate input before sending (client-side check)
       const validated = api.rooms.create.input.parse(data);
       
-      const res = await fetch(api.rooms.create.path, {
+      const res = await fetch(buildApiUrl(api.rooms.create.path), {
         method: api.rooms.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
@@ -43,7 +50,7 @@ export function useJoinRoom() {
 
   return useMutation({
     mutationFn: async (data: JoinRoomRequest) => {
-      const res = await fetch(api.rooms.join.path, {
+      const res = await fetch(buildApiUrl(api.rooms.join.path), {
         method: api.rooms.join.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
