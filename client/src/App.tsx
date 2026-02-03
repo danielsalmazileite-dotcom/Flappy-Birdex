@@ -88,15 +88,15 @@ function MenuBackground() {
       if (birds.length >= 7) return;
       const id = `${bgBirdSeed.current}-${Date.now()}-${birds.length}`;
 
-      const topLimit = rand(20, Math.max(80, window.innerHeight * 0.22));
-      const bottomLimit = rand(window.innerHeight * 0.35, window.innerHeight * 0.92);
+      const topLimit = rand(18, Math.max(70, window.innerHeight * 0.18));
+      const bottomLimit = rand(window.innerHeight * 0.32, window.innerHeight * 0.78);
       const jumpStrength = JUMP * rand(0.88, 1.12);
       const gravityScale = rand(0.85, 1.2);
 
       birds.push({
         id,
         x: -40,
-        y: rand(window.innerHeight * 0.14, window.innerHeight * 0.34),
+        y: rand(window.innerHeight * 0.12, window.innerHeight * 0.55),
         v: rand(-1, 1),
         speedX: rand(70, 115),
         nextJumpAt: nowMs + rand(150, 1400),
@@ -232,12 +232,12 @@ function MenuBackground() {
 
         if (b.y < b.topLimit) {
           b.y = b.topLimit;
-          b.v = Math.abs(b.v) * 0.3;
+          b.v = Math.abs(b.v) * 0.35 + rand(0.2, 0.8);
         }
 
         if (b.y > b.bottomLimit) {
           b.y = b.bottomLimit;
-          b.v = -Math.abs(b.v) * 0.35;
+          b.v = -Math.abs(b.v) * 0.55 - rand(0.6, 2.2);
         }
 
         const targetRot = Math.max(-0.7, Math.min(1.0, b.v * 0.08));
