@@ -81,8 +81,8 @@ function MenuBackground() {
       if (birds.length >= 7) return;
       const id = `${bgBirdSeed.current}-${Date.now()}-${birds.length}`;
 
-      const topLimit = rand(40, 90);
-      const bottomLimit = rand(window.innerHeight * 0.55, window.innerHeight * 0.78);
+      const topLimit = rand(20, Math.max(80, window.innerHeight * 0.22));
+      const bottomLimit = rand(window.innerHeight * 0.35, window.innerHeight * 0.92);
       const jumpStrength = JUMP * rand(0.88, 1.12);
       const gravityScale = rand(0.85, 1.2);
 
@@ -263,7 +263,11 @@ function MenuBackground() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none relative" aria-hidden="true">
+    <div
+      className="fixed inset-0 z-0 pointer-events-none relative"
+      aria-hidden="true"
+      style={{ background: "#a8ddff" }}
+    >
       <div className="home-sky">
         <div className="home-cloud home-cloud-1" />
         <div className="home-cloud home-cloud-2" />
