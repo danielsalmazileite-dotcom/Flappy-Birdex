@@ -65,6 +65,9 @@ function MenuBackground() {
       jumpStrength: number;
       gravityScale: number;
       phase: number;
+      baseY: number;
+      ampY: number;
+      wobbleSpeed: number;
     };
 
     const birds: BgBird[] = [];
@@ -93,10 +96,14 @@ function MenuBackground() {
       const jumpStrength = JUMP * rand(0.88, 1.12);
       const gravityScale = rand(0.85, 1.2);
 
+      const baseY = rand(window.innerHeight * 0.14, window.innerHeight * 0.62);
+      const ampY = rand(10, 42);
+      const wobbleSpeed = rand(0.0012, 0.0024);
+
       birds.push({
         id,
         x: -40,
-        y: rand(window.innerHeight * 0.12, window.innerHeight * 0.55),
+        y: baseY,
         v: rand(-1, 1),
         speedX: rand(70, 115),
         nextJumpAt: nowMs + rand(150, 1400),
@@ -107,6 +114,9 @@ function MenuBackground() {
         jumpStrength,
         gravityScale,
         phase: rand(0, Math.PI * 2),
+        baseY,
+        ampY,
+        wobbleSpeed,
       });
     };
 
@@ -222,29 +232,14 @@ function MenuBackground() {
 
         b.x += b.speedX * dt;
 
-        if (now >= b.nextJumpAt) {
-          b.v = b.jumpStrength;
-          b.nextJumpAt = scheduleNextJump(now);
-        }
+        const targetY = b.baseY + Math.sin(now * b.wobbleSpeed + b.phase) * b.ampY;
+        const dy = targetY - b.y;
+        b.y += dy * Math.min(1, dt * 3.5);
 
-        b.v += GRAVITY * b.gravityScale;
-        b.y += b.v;
-
-        if (b.y < b.topLimit) {
-          b.y = b.topLimit;
-          b.v = Math.abs(b.v) * 0.35 + rand(0.2, 0.8);
-        }
-
-        if (b.y > b.bottomLimit) {
-          b.y = b.bottomLimit;
-          b.v = -Math.abs(b.v) * 0.55 - rand(0.6, 2.2);
-        }
-
-        const targetRot = Math.max(-0.7, Math.min(1.0, b.v * 0.08));
+        const targetRot = Math.max(-0.6, Math.min(0.6, dy * 0.02));
         b.rotation += (targetRot - b.rotation) * Math.min(1, dt * 10);
 
-        const float = Math.sin(now / 600 + b.phase) * 0.4;
-        drawBgBird(b.x, b.y + float, b.rotation, Math.floor(now / 16), b.isDead);
+        drawBgBird(b.x, b.y, b.rotation, Math.floor(now / 16), b.isDead);
       });
 
       for (let i = birds.length - 1; i >= 0; i--) {
