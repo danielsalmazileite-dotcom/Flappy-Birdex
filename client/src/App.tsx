@@ -35,7 +35,7 @@ function MenuMusic() {
   });
 
   useEffect(() => {
-    const audio = new Audio("/audio/cant-let-go.mp3");
+    const audio = new Audio("/audio/OMFGJR-omfg-hello-2d4b127f.mp3");
     audio.loop = true;
     audio.volume = 0.35;
     audio.preload = "auto";

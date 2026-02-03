@@ -20,7 +20,6 @@ interface GameCanvasProps {
   seed?: number;
   startTime?: number | null;
   playerSlot?: number;
-  isSpectating?: boolean;
 }
 
 interface Pipe {
@@ -50,7 +49,6 @@ export function GameCanvas({
   seed,
   startTime,
   playerSlot,
-  isSpectating = false,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -202,20 +200,19 @@ export function GameCanvas({
   };
 
   const handleJump = useCallback(() => {
-    if (isMultiplayer && isSpectating) return;
     if (gameState.current.isGameRunning) {
       gameState.current.velocity = gameState.current.jumpStrength;
       gameState.current.flapsThisGame++;
       setSessionFlaps((prev: number) => prev + 1);
     }
-  }, [isMultiplayer, isSpectating]);
+  }, []);
 
   // Update Game State when it starts (for multiplayer synchronization)
   useEffect(() => {
-    if (isPlaying && !isGameOver && !(isMultiplayer && isSpectating)) {
+    if (isPlaying && !isGameOver) {
       gameState.current.isGameRunning = true;
     }
-  }, [isPlaying, isGameOver, isMultiplayer, isSpectating]);
+  }, [isPlaying, isGameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

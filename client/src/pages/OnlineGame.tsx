@@ -16,7 +16,6 @@ export default function OnlineGame() {
   const [isReady, setIsReady] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerSlot, setPlayerSlot] = useState<number | null>(null);
-  const [isSpectating, setIsSpectating] = useState(false);
   
   const character = (localStorage.getItem("flappi_selected_char") as CharacterType) || "bird";
   const nickname = (localStorage.getItem("flappi_nickname") || "Jogador").trim() || "Jogador";
@@ -63,14 +62,6 @@ export default function OnlineGame() {
         if (!data.starting && !data.started) {
           setIsReady(false);
           setCountdown(null);
-          setIsSpectating(false);
-        }
-
-        if (playerId && Array.isArray(data.players)) {
-          const me = data.players.find((p: any) => p.id === playerId);
-          if (me && me.alive === false) {
-            setIsSpectating(true);
-          }
         }
       }
     };
@@ -122,7 +113,7 @@ export default function OnlineGame() {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "dead" }));
     }
-    setIsSpectating(true);
+    setLocation("/online");
   };
 
   const handleRestart = () => {
@@ -257,18 +248,6 @@ export default function OnlineGame() {
 
   return (
     <div className="h-screen w-screen overflow-hidden">
-      {isSpectating && (
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/40 text-white font-bold px-4 py-2 rounded-xl">
-            Você morreu — assistindo...
-          </div>
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
-            <GlossyButton onClick={() => setLocation("/online")} className="opacity-80">
-              Sair
-            </GlossyButton>
-          </div>
-        </div>
-      )}
       <GameCanvas 
         onExit={() => setLocation("/online")} 
         isMultiplayer={true}
@@ -277,7 +256,6 @@ export default function OnlineGame() {
         seed={gameState.seed}
         startTime={gameState.startTime}
         playerSlot={playerSlot ?? undefined}
-        isSpectating={isSpectating}
         remotePlayers={players
           .filter((p: any) => !playerId || p.id !== playerId)
           .map((p: any) => ({ id: p.id, slot: p.slot, y: p.y, char: p.char, nick: p.nick, alive: p.alive }))}

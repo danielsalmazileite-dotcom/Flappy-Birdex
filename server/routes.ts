@@ -842,22 +842,40 @@ export async function registerRoutes(
     });
 
     ws.on("close", () => {
+      const leaving = state.players.get(ws);
       state.players.delete(ws);
+
+      // If the host leaves but there are still players, transfer host instead of killing the room.
       if (ws === state.host) {
-        roomsState.delete(roomCode);
-        state.players.forEach((_, socket) => socket.close());
-      } else {
-        if (state.starting && !state.started) {
-          const allReady = Array.from(state.players.values()).every((pl) => pl.ready);
-          if (allReady && state.players.size > 0) {
-            state.started = true;
-            state.starting = false;
-            state.seed = createRoomSeed();
-            state.startTime = Date.now() + 3000;
-          }
+        const nextHost = Array.from(state.players.keys())[0] || null;
+        if (!nextHost) {
+          roomsState.delete(roomCode);
+          return;
         }
-        broadcast();
+        state.host = nextHost;
       }
+
+      // If a player leaves mid-round, treat it as removal and recompute winner.
+      if (state.started && !state.roundOver) {
+        const alivePlayers = Array.from(state.players.values()).filter((pl) => pl.alive);
+        if (alivePlayers.length <= 1) {
+          state.roundOver = true;
+          state.winnerId = alivePlayers[0]?.id ?? null;
+        }
+      }
+
+      // If we were in the ready phase, re-check whether we can auto-start.
+      if (state.starting && !state.started) {
+        const allReady = Array.from(state.players.values()).every((pl) => pl.ready);
+        if (allReady && state.players.size > 0) {
+          state.started = true;
+          state.starting = false;
+          state.seed = createRoomSeed();
+          state.startTime = Date.now() + 3000;
+        }
+      }
+
+      broadcast();
     });
   });
 
