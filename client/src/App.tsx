@@ -34,6 +34,13 @@ function MenuBackground() {
     (location.startsWith("/online") && !location.startsWith("/online/game"));
 
   useEffect(() => {
+    const body = document.body;
+    if (show) body.classList.add("menu-mode");
+    else body.classList.remove("menu-mode");
+    return () => body.classList.remove("menu-mode");
+  }, [show]);
+
+  useEffect(() => {
     if (!show) return;
     const canvas = bgCanvasRef.current;
     if (!canvas) return;
@@ -266,7 +273,6 @@ function MenuBackground() {
     <div
       className="fixed inset-0 z-0 pointer-events-none relative"
       aria-hidden="true"
-      style={{ background: "#a8ddff" }}
     >
       <div className="home-sky">
         <div className="home-cloud home-cloud-1" />
