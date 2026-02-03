@@ -11,6 +11,8 @@ export default function OnlineGame() {
   const [, setLocation] = useLocation();
   const code = params?.code;
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [wsReady, setWsReady] = useState(false);
+  const pendingStartRef = useState(() => ({ value: false }))[0];
   const [gameState, setGameState] = useState<any>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -22,6 +24,7 @@ export default function OnlineGame() {
 
   useEffect(() => {
     if (!code) return;
+    setWsReady(false);
 
     const envWsBase = ((import.meta as any).env?.VITE_WS_BASE_URL as string | undefined) || "";
     const wsBase = envWsBase.trim()
@@ -31,6 +34,21 @@ export default function OnlineGame() {
     const ws = new WebSocket(
       `${wsBase}/ws?code=${code}&nick=${encodeURIComponent(nickname)}&char=${encodeURIComponent(character)}`
     );
+
+    ws.onopen = () => {
+      setWsReady(true);
+      if (pendingStartRef.value) {
+        pendingStartRef.value = false;
+        try {
+          ws.send(JSON.stringify({ type: "start" }));
+        } catch {}
+      }
+    };
+
+    ws.onclose = () => {
+      setWsReady(false);
+      pendingStartRef.value = false;
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -83,8 +101,13 @@ export default function OnlineGame() {
   };
 
   const handleStart = () => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (!socket) return;
+    if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "start" }));
+      return;
+    }
+    if (socket.readyState === WebSocket.CONNECTING) {
+      pendingStartRef.value = true;
     }
   };
 
@@ -196,7 +219,7 @@ export default function OnlineGame() {
           </div>
 
           {isHost ? (
-            <GlossyButton onClick={handleStart} className="w-full text-xl py-6">
+            <GlossyButton onClick={handleStart} className="w-full text-xl py-6" disabled={!wsReady}>
               COMEÇAR JOGO
             </GlossyButton>
           ) : (
