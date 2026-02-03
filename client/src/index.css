@@ -10,6 +10,22 @@
 
 @font-face {
   font-family: 'New Rodin';
+  src: url('./assets/fonts/FOT-NewRodin Pro M.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'New Rodin';
+  src: url('./assets/fonts/FOT-NewRodin Pro M.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'New Rodin';
   src: url('./assets/fonts/FOT-NewRodin Pro EB.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
@@ -59,10 +75,23 @@
     overflow-x: hidden;
   }
 
+  b, strong {
+    font-weight: 500;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 500;
     @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-bold,
+  .font-semibold,
+  .font-extrabold,
+  .font-black {
+    font-weight: 500 !important;
   }
 }
 
