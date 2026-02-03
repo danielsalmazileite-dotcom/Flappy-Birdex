@@ -106,6 +106,7 @@ export function GameCanvas({
   const spawnedPipesRef = useRef<number>(0);
   const remoteMotionRef = useRef(new Map<string, { lastY: number; velocity: number }>());
   const sentDeadRef = useRef(false);
+  const startTimerRef = useRef<number | null>(null);
 
   const requestRef = useRef<number>();
 
@@ -748,10 +749,26 @@ export function GameCanvas({
   useEffect(() => {
     if (!isMultiplayer) return;
     if (typeof startTime !== "number") return;
-    if (Date.now() < startTime) return;
     if (isPlaying || isGameOver) return;
 
-    startGame(false);
+    if (startTimerRef.current != null) {
+      window.clearTimeout(startTimerRef.current);
+      startTimerRef.current = null;
+    }
+
+    const delayMs = Math.max(0, startTime - Date.now());
+    startTimerRef.current = window.setTimeout(() => {
+      startTimerRef.current = null;
+      if (isPlaying || isGameOver) return;
+      startGame(false);
+    }, delayMs + 20);
+
+    return () => {
+      if (startTimerRef.current != null) {
+        window.clearTimeout(startTimerRef.current);
+        startTimerRef.current = null;
+      }
+    };
   }, [isMultiplayer, startTime, isPlaying, isGameOver]);
 
   const currentPageCharacters = CHARACTERS.filter(c => c.page === characterPage);
