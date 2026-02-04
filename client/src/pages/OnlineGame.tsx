@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { GameCanvas } from "@/components/GameCanvas";
-import { CharacterType } from "@/lib/playerStats";
+import { CharacterType, recordOnlineMatch } from "@/lib/playerStats";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { GlossyButton } from "@/components/GlossyButton";
 import { Loader2 } from "lucide-react";
@@ -18,9 +18,16 @@ export default function OnlineGame() {
   const [isReady, setIsReady] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerSlot, setPlayerSlot] = useState<number | null>(null);
+
+  const recordedMatchKeyRef = useRef<string | null>(null);
+  const playerIdRef = useRef<string | null>(null);
   
   const character = (localStorage.getItem("flappi_selected_char") as CharacterType) || "bird";
   const nickname = (localStorage.getItem("flappi_nickname") || "Player").trim() || "Player";
+
+  useEffect(() => {
+    playerIdRef.current = playerId;
+  }, [playerId]);
 
   useEffect(() => {
     if (!code) return;
@@ -67,11 +74,20 @@ export default function OnlineGame() {
       }
       if (data.type === "welcome") {
         setPlayerId(data.playerId);
+        playerIdRef.current = data.playerId;
         setPlayerSlot(typeof data.slot === "number" ? data.slot : null);
       }
 
       if (data.type === "sync") {
         setGameState(data);
+
+        if (data.roundOver && playerIdRef.current) {
+          const key = `${data.startTime ?? ""}-${data.seed ?? ""}`;
+          if (key && recordedMatchKeyRef.current !== key) {
+            recordedMatchKeyRef.current = key;
+            recordOnlineMatch(Boolean(data.winnerId && data.winnerId === playerIdRef.current));
+          }
+        }
 
         if (data.startTime && countdown === null) {
           startCountdown(data.startTime);
@@ -133,6 +149,13 @@ export default function OnlineGame() {
   };
 
   const handlePlayerDead = () => {
+    try {
+      const key = `${gameState?.startTime ?? ""}-${gameState?.seed ?? ""}`;
+      if (key && recordedMatchKeyRef.current !== key) {
+        recordedMatchKeyRef.current = key;
+        recordOnlineMatch(false);
+      }
+    } catch {}
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "dead" }));
     }

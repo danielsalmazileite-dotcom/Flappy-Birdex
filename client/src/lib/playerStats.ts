@@ -5,6 +5,7 @@ export interface PlayerStats {
   bestHardcoreScore: number;
   onlineMatchesPlayed: number;
   onlineMatchesWon: number;
+  onlineMatchesLost: number;
 }
 
 import { touchLocalProgressUpdatedAt } from "./cloudProgress";
@@ -17,6 +18,7 @@ const DEFAULT_STATS: PlayerStats = {
   bestHardcoreScore: 0,
   onlineMatchesPlayed: 0,
   onlineMatchesWon: 0,
+  onlineMatchesLost: 0,
 };
 
 function toNumberOrZero(v: unknown): number {
@@ -32,6 +34,7 @@ function coerceStats(value: unknown): PlayerStats | null {
     bestHardcoreScore: toNumberOrZero(obj.bestHardcoreScore),
     onlineMatchesPlayed: toNumberOrZero(obj.onlineMatchesPlayed),
     onlineMatchesWon: toNumberOrZero(obj.onlineMatchesWon),
+    onlineMatchesLost: toNumberOrZero(obj.onlineMatchesLost),
   };
 }
 
@@ -79,6 +82,8 @@ export function recordOnlineMatch(won: boolean): void {
   stats.onlineMatchesPlayed++;
   if (won) {
     stats.onlineMatchesWon++;
+  } else {
+    stats.onlineMatchesLost++;
   }
   savePlayerStats(stats);
 }
@@ -148,8 +153,8 @@ export const CHARACTERS: CharacterInfo[] = [
   {
     type: "birdglasses",
     label: "Bird Style",
-    unlockRequirement: "20 online wins",
-    isUnlocked: (stats) => stats.onlineMatchesWon >= 20,
+    unlockRequirement: "20 online matches (wins or losses)",
+    isUnlocked: (stats) => (stats.onlineMatchesWon + stats.onlineMatchesLost) >= 20,
     page: 2
   }
 ];
