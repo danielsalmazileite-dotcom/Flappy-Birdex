@@ -12,7 +12,7 @@ export function GlossyButton({ children, className, ...props }: GlossyButtonProp
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       className={cn(
-        "glossy-button relative overflow-hidden px-8 py-4 rounded-lg font-display font-bold text-lg text-sky-950 tracking-wide transition-all duration-200",
+        "glossy-button relative overflow-hidden px-8 py-4 rounded-lg font-display font-bold text-lg tracking-wide transition-all duration-200",
         "flex items-center justify-center gap-2 w-full md:w-auto min-w-[200px]",
         className
       )}

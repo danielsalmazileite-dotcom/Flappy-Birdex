@@ -49,6 +49,7 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("flappi_bird_color", birdColor);
     touchLocalProgressUpdatedAt();
+    window.dispatchEvent(new Event("flappi-theme-changed"));
   }, [birdColor]);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function Home() {
       <GlassCard className="py-8 z-10" data-home-ui>
         <div className="w-full flex justify-between items-center mb-4">
           <div />
-          <h1 className="text-4xl md:text-5xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-sky-600 to-sky-950 drop-shadow-sm">
+          <h1 className="text-4xl md:text-5xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-[var(--theme-accent,#51c8ff)] to-[var(--theme-accent-darker,#0b2a5a)] drop-shadow-sm">
             Flappi Birdex
           </h1>
           <GlossyButton onClick={() => setShowStats(!showStats)} className="w-auto min-w-0 px-3 py-3 rounded-full">
@@ -86,7 +87,7 @@ export default function Home() {
         
         {showStats ? (
           <div className="w-full text-left space-y-2 mb-6 bg-white/30 p-4 rounded-xl">
-            <h3 className="font-bold text-sky-950 mb-2">Your Stats</h3>
+            <h3 className="font-bold text-[color:var(--theme-text,#0b2a5a)] mb-2">Your Stats</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Flaps: <strong>{stats.totalFlaps}</strong></div>
               <div>Best (C): <strong>{stats.bestScore}</strong></div>
@@ -95,13 +96,13 @@ export default function Home() {
             </div>
 
             <div className="mt-5 pt-4 border-t border-white/40">
-              <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Account</div>
+              <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Account</div>
               {!isReady ? (
-                <div className="text-xs text-sky-900 font-bold">Loading account...</div>
+                <div className="text-xs text-[color:var(--theme-accent-dark,#1b4d7a)] font-bold">Loading account...</div>
               ) : user ? (
                 <div className="space-y-2">
-                  <div className="text-sm font-bold text-sky-950">Signed in</div>
-                  <div className="text-xs text-sky-900 font-bold break-all">{user.email}</div>
+                  <div className="text-sm font-bold text-[color:var(--theme-text,#0b2a5a)]">Signed in</div>
+                  <div className="text-xs text-[color:var(--theme-accent-dark,#1b4d7a)] font-bold break-all">{user.email}</div>
                   <button
                     onClick={async () => {
                       try {
@@ -119,7 +120,7 @@ export default function Home() {
                         setAuthError(e?.message || "Failed to load");
                       }
                     }}
-                    className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
+                    className="w-full rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black py-2 hover:bg-white/70 transition-colors"
                   >
                     Load stats
                   </button>
@@ -139,7 +140,7 @@ export default function Home() {
                         setAuthError(e?.message || "Failed to save");
                       }
                     }}
-                    className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
+                    className="w-full rounded-xl theme-primary-button font-black py-2 transition-colors"
                   >
                     Save progress
                   </button>
@@ -147,7 +148,7 @@ export default function Home() {
                     onClick={() => {
                       signOutNow().catch(() => {});
                     }}
-                    className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
+                    className="w-full rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black py-2 hover:bg-white/70 transition-colors"
                   >
                     Sign out
                   </button>
@@ -155,7 +156,7 @@ export default function Home() {
               ) : (
                 <div className="space-y-2">
                   {authError ? <div className="text-xs font-bold text-red-700">{authError}</div> : null}
-                  {authInfo ? <div className="text-xs font-bold text-sky-900">{authInfo}</div> : null}
+                  {authInfo ? <div className="text-xs font-bold text-[color:var(--theme-accent-dark,#1b4d7a)]">{authInfo}</div> : null}
 
                   {authMode === "none" ? (
                     <div className="grid grid-cols-2 gap-2">
@@ -165,7 +166,7 @@ export default function Home() {
                           setAuthInfo(null);
                           setAuthMode("register");
                         }}
-                        className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
+                        className="w-full rounded-xl theme-primary-button font-black py-2 transition-colors"
                       >
                         Create account
                       </button>
@@ -175,7 +176,7 @@ export default function Home() {
                           setAuthInfo(null);
                           setAuthMode("login");
                         }}
-                        className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
+                        className="w-full rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black py-2 hover:bg-white/70 transition-colors"
                       >
                         Sign in
                       </button>
@@ -215,7 +216,7 @@ export default function Home() {
                             setAuthError(e?.message || "Erro");
                           }
                         }}
-                        className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
+                        className="w-full rounded-xl theme-primary-button font-black py-2 transition-colors"
                       >
                         Create account
                       </button>
@@ -223,7 +224,7 @@ export default function Home() {
                         onClick={() => {
                           setAuthMode("none");
                         }}
-                        className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
+                        className="w-full rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black py-2 hover:bg-white/70 transition-colors"
                       >
                         Back
                       </button>
@@ -257,7 +258,7 @@ export default function Home() {
                             setAuthError(e?.message || "Erro");
                           }
                         }}
-                        className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
+                        className="w-full rounded-xl theme-primary-button font-black py-2 transition-colors"
                       >
                         Sign in
                       </button>
@@ -265,7 +266,7 @@ export default function Home() {
                         onClick={() => {
                           setAuthMode("none");
                         }}
-                        className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
+                        className="w-full rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black py-2 hover:bg-white/70 transition-colors"
                       >
                         Back
                       </button>

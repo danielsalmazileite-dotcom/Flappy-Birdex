@@ -24,6 +24,65 @@ import JoinRoom from "@/pages/JoinRoom";
 import OnlineGame from "@/pages/OnlineGame";
 import NotFound from "@/pages/not-found";
 
+function ThemeSync() {
+  useEffect(() => {
+    const hexToRgb = (hex: string) => {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!m) return null;
+      return { r: parseInt(m[1]!, 16), g: parseInt(m[2]!, 16), b: parseInt(m[3]!, 16) };
+    };
+    const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+    const rgbToHex = (r: number, g: number, b: number) =>
+      `#${clamp255(r).toString(16).padStart(2, "0")}${clamp255(g).toString(16).padStart(2, "0")}${clamp255(b).toString(16).padStart(2, "0")}`;
+    const mix = (a: string, b: string, t: number) => {
+      const ra = hexToRgb(a);
+      const rb = hexToRgb(b);
+      if (!ra || !rb) return a;
+      return rgbToHex(
+        ra.r + (rb.r - ra.r) * t,
+        ra.g + (rb.g - ra.g) * t,
+        ra.b + (rb.b - ra.b) * t,
+      );
+    };
+
+    const apply = () => {
+      const main = localStorage.getItem("flappi_bird_color") || "#ffeb3b";
+      const accent = main;
+      const accentDark = mix(main, "#000000", 0.55);
+      const accentDarker = mix(main, "#000000", 0.72);
+      const accentLight = mix(main, "#ffffff", 0.72);
+      const bgTop = mix(main, "#ffffff", 0.82);
+      const bgBottom = mix(main, "#ffffff", 0.62);
+
+      const root = document.documentElement;
+      root.style.setProperty("--theme-accent", accent);
+      root.style.setProperty("--theme-accent-dark", accentDark);
+      root.style.setProperty("--theme-accent-darker", accentDarker);
+      root.style.setProperty("--theme-accent-light", accentLight);
+      root.style.setProperty("--theme-bg-top", bgTop);
+      root.style.setProperty("--theme-bg-bottom", bgBottom);
+      root.style.setProperty("--theme-text", accentDarker);
+    };
+
+    apply();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "flappi_bird_color" || e.key == null) apply();
+    };
+    const onTheme = () => apply();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("flappi-theme-changed", onTheme as EventListener);
+    window.addEventListener("focus", onTheme);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("flappi-theme-changed", onTheme as EventListener);
+      window.removeEventListener("focus", onTheme);
+    };
+  }, []);
+
+  return null;
+}
+
 function MenuBackground() {
   const [location] = useLocation();
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -95,6 +154,43 @@ function MenuBackground() {
     const rand = (min: number, max: number) => min + Math.random() * (max - min);
     const scheduleNextJump = (nowMs: number) => nowMs + rand(350, 1550);
 
+    const hexToRgb = (hex: string) => {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!m) return null;
+      return { r: parseInt(m[1]!, 16), g: parseInt(m[2]!, 16), b: parseInt(m[3]!, 16) };
+    };
+    const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+    const rgbToHex = (r: number, g: number, b: number) =>
+      `#${clamp255(r).toString(16).padStart(2, "0")}${clamp255(g).toString(16).padStart(2, "0")}${clamp255(b).toString(16).padStart(2, "0")}`;
+    const mix = (a: string, b: string, t: number) => {
+      const ra = hexToRgb(a);
+      const rb = hexToRgb(b);
+      if (!ra || !rb) return a;
+      return rgbToHex(
+        ra.r + (rb.r - ra.r) * t,
+        ra.g + (rb.g - ra.g) * t,
+        ra.b + (rb.b - ra.b) * t,
+      );
+    };
+
+    const getBirdPalette = () => {
+      const main = localStorage.getItem("flappi_bird_color") || "#ffeb3b";
+      const wing = localStorage.getItem("flappi_wing_color") || "#ffffff";
+      const eye = localStorage.getItem("flappi_eye_color") || "#ffffff";
+      const pupil = localStorage.getItem("flappi_pupil_color") || "#000000";
+      const beak = localStorage.getItem("flappi_beak_color") || "#ff6a2a";
+      return {
+        main,
+        light: mix(main, "#ffffff", 0.55),
+        dark: mix(main, "#000000", 0.2),
+        stroke: mix(main, "#000000", 0.45),
+        wing,
+        eye,
+        pupil,
+        beak,
+      };
+    };
+
     const spawnBird = (nowMs: number) => {
       if (birds.length >= 7) return;
       const id = `${bgBirdSeed.current}-${Date.now()}-${birds.length}`;
@@ -133,12 +229,7 @@ function MenuBackground() {
       ctx.translate(x, y);
       ctx.rotate(rotation);
 
-      const baseBird = {
-        light: "#fff8b3",
-        main: "#ffeb3b",
-        dark: "#ffc107",
-        stroke: "#e65100",
-      };
+      const baseBird = getBirdPalette();
 
       const grad = ctx.createRadialGradient(-5, -8, 2, 0, 0, BIRD_RADIUS);
       grad.addColorStop(0, baseBird.light);
@@ -165,11 +256,11 @@ function MenuBackground() {
 
       ctx.beginPath();
       ctx.arc(7, -4, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
+      ctx.fillStyle = baseBird.eye;
       ctx.fill();
       ctx.beginPath();
       ctx.arc(9, -4, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = "black";
+      ctx.fillStyle = baseBird.pupil;
       ctx.fill();
 
       ctx.beginPath();
@@ -177,13 +268,13 @@ function MenuBackground() {
       ctx.lineTo(22, 5);
       ctx.lineTo(12, 9);
       ctx.closePath();
-      ctx.fillStyle = "#ff6a2a";
+      ctx.fillStyle = baseBird.beak;
       ctx.fill();
 
       const wingFrame = isDead ? 1 : Math.floor(frame / 5) % 3;
       const wingRotation = isDead ? 0 : wingFrame === 0 ? -0.3 : wingFrame === 1 ? 0 : 0.3;
 
-      ctx.fillStyle = "white";
+      ctx.fillStyle = baseBird.wing;
       ctx.strokeStyle = "black";
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
@@ -460,11 +551,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <Toaster />
+          <ThemeSync />
           <MenuBackground />
           <MenuMusic />
-          <CloudProgressSync />
           <Router />
+          <Toaster />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

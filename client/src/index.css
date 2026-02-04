@@ -76,7 +76,8 @@
   }
 
   body.menu-mode {
-    background: #a8ddff;
+    color: var(--theme-text, #0b2a5a);
+    background: linear-gradient(180deg, var(--theme-bg-top, #e8f9ff) 0%, var(--theme-bg-bottom, #9be7ff) 100%);
   }
 
   body.online-mode {
@@ -105,11 +106,31 @@
   }
 }
 
+.theme-primary-button {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent, #51c8ff) 55%, white 45%) 0%,
+    var(--theme-accent, #51c8ff) 65%,
+    color-mix(in srgb, var(--theme-accent, #51c8ff) 75%, black 25%) 100%
+  );
+  color: var(--theme-text, #0b2a5a);
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #51c8ff) 60%, white 40%);
+}
+
+.theme-primary-button:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent, #51c8ff) 45%, white 55%) 0%,
+    color-mix(in srgb, var(--theme-accent, #51c8ff) 78%, white 22%) 65%,
+    color-mix(in srgb, var(--theme-accent, #51c8ff) 70%, black 30%) 100%
+  );
+}
+
 .home-sky {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: #a8ddff;
+  background: linear-gradient(180deg, var(--theme-bg-top, #e8f9ff) 0%, var(--theme-bg-bottom, #9be7ff) 100%);
 }
 
 .home-birds-canvas {
@@ -228,17 +249,30 @@
   
   /* Light Blue Glossy Square Button */
   .glossy-button {
-    background: linear-gradient(180deg, #e8f9ff 0%, #9be7ff 49%, #51c8ff 51%, #8fe3ff 100%);
+    color: var(--theme-text, #0b2a5a);
+    background: linear-gradient(
+      180deg,
+      var(--theme-accent-light, #e8f9ff) 0%,
+      var(--theme-bg-bottom, #9be7ff) 49%,
+      var(--theme-accent, #51c8ff) 51%,
+      var(--theme-bg-top, #8fe3ff) 100%
+    );
     box-shadow: 
       0 4px 6px rgba(0,0,0,0.15),
-      0 8px 20px rgba(80, 190, 255, 0.28),
+      0 8px 20px rgba(0,0,0,0.10),
       inset 0 1px 0 rgba(255,255,255,0.7);
-    border: 2px solid rgba(130, 225, 255, 0.75);
+    border: 2px solid color-mix(in srgb, var(--theme-accent, #51c8ff) 55%, white 45%);
     border-radius: 8px;
   }
   
   .glossy-button:hover {
-    background: linear-gradient(180deg, #f1fcff 0%, #baf0ff 49%, #6fd5ff 51%, #a7ecff 100%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent-light, #f1fcff) 65%, white 35%) 0%,
+      color-mix(in srgb, var(--theme-bg-bottom, #baf0ff) 70%, white 30%) 49%,
+      color-mix(in srgb, var(--theme-accent, #6fd5ff) 75%, white 25%) 51%,
+      color-mix(in srgb, var(--theme-bg-top, #a7ecff) 70%, white 30%) 100%
+    );
     box-shadow: 
       0 6px 12px rgba(80, 190, 255, 0.25),
       0 12px 30px rgba(80, 190, 255, 0.35),
@@ -247,7 +281,11 @@
   }
 
   .glossy-button:active {
-    background: linear-gradient(180deg, #8fe3ff 0%, #51c8ff 100%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent, #8fe3ff) 70%, black 30%) 0%,
+      var(--theme-accent, #51c8ff) 100%
+    );
     box-shadow: 
       0 2px 4px rgba(0,0,0,0.15),
       inset 0 2px 4px rgba(0,0,0,0.1);
