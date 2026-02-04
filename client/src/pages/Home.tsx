@@ -34,6 +34,7 @@ export default function Home() {
   const [stats] = useState(getPlayerStats());
   const [showStats, setShowStats] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+  const [showColorCustomize, setShowColorCustomize] = useState(false);
   const [authMode, setAuthMode] = useState<"none" | "register" | "login">("none");
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
@@ -44,6 +45,12 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("flappi_selected_char", character);
     touchLocalProgressUpdatedAt();
+  }, [character]);
+
+  useEffect(() => {
+    if (character !== "bird" && character !== "birdglasses") {
+      setShowColorCustomize(false);
+    }
   }, [character]);
 
   useEffect(() => {
@@ -72,8 +79,34 @@ export default function Home() {
     touchLocalProgressUpdatedAt();
   }, [beakColor]);
 
+  const clearCache = () => {
+    const ok = window.confirm("Clear all saved data on this device? This will sign you out and reset your progress.");
+    if (!ok) return;
+
+    try {
+      const toRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("flappi_")) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {}
+
+    try {
+      window.dispatchEvent(new Event("flappi-theme-changed"));
+    } catch {}
+
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <button
+        onClick={clearCache}
+        className="fixed top-4 right-4 z-20 rounded-xl bg-white/60 border border-white/70 text-[color:var(--theme-text,#0b2a5a)] font-black px-4 py-2 hover:bg-white/70 transition-colors"
+      >
+        Clear Cache
+      </button>
       <GlassCard className="py-8 z-10" data-home-ui>
         <div className="w-full flex justify-between items-center mb-4">
           <div />
@@ -287,52 +320,68 @@ export default function Home() {
             </div>
 
             {(character === "bird" || character === "birdglasses") && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Bird Color</div>
-                  <input
-                    type="color"
-                    value={birdColor}
-                    onChange={(e) => setBirdColor(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                  />
-                </div>
-                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Wing Color</div>
-                  <input
-                    type="color"
-                    value={wingColor}
-                    onChange={(e) => setWingColor(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                  />
-                </div>
-                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Eye Color</div>
-                  <input
-                    type="color"
-                    value={eyeColor}
-                    onChange={(e) => setEyeColor(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                  />
-                </div>
-                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Pupil Color</div>
-                  <input
-                    type="color"
-                    value={pupilColor}
-                    onChange={(e) => setPupilColor(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                  />
-                </div>
-                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Beak Color</div>
-                  <input
-                    type="color"
-                    value={beakColor}
-                    onChange={(e) => setBeakColor(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                  />
-                </div>
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowColorCustomize((v) => !v)}
+                  className="w-full flex items-center justify-between gap-3 p-3 bg-white/30 rounded-xl border border-white/50 text-left hover:bg-white/40 transition-colors"
+                >
+                  <span className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)]">
+                    Customize Colors
+                  </span>
+                  <span className="text-xs font-black text-[color:var(--theme-text,#0b2a5a)]">
+                    {showColorCustomize ? "Minimize" : "Edit"}
+                  </span>
+                </button>
+
+                {showColorCustomize && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                      <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Bird Color</div>
+                      <input
+                        type="color"
+                        value={birdColor}
+                        onChange={(e) => setBirdColor(e.target.value)}
+                        className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                      />
+                    </div>
+                    <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                      <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Wing Color</div>
+                      <input
+                        type="color"
+                        value={wingColor}
+                        onChange={(e) => setWingColor(e.target.value)}
+                        className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                      />
+                    </div>
+                    <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                      <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Eye Color</div>
+                      <input
+                        type="color"
+                        value={eyeColor}
+                        onChange={(e) => setEyeColor(e.target.value)}
+                        className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                      />
+                    </div>
+                    <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                      <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Pupil Color</div>
+                      <input
+                        type="color"
+                        value={pupilColor}
+                        onChange={(e) => setPupilColor(e.target.value)}
+                        className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                      />
+                    </div>
+                    <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                      <div className="text-xs font-black uppercase tracking-wide text-[color:var(--theme-accent-dark,#1b4d7a)] mb-2">Beak Color</div>
+                      <input
+                        type="color"
+                        value={beakColor}
+                        onChange={(e) => setBeakColor(e.target.value)}
+                        className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
