@@ -50,7 +50,7 @@ async function apiJson(path: string, init?: RequestInit) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = typeof data?.message === "string" ? data.message : "Erro";
+    const msg = typeof data?.message === "string" ? data.message : "Error";
     throw new Error(msg);
   }
   return data;

@@ -97,15 +97,15 @@ export const CHARACTERS: CharacterInfo[] = [
   // Page 1
   {
     type: "bird",
-    label: "Passarinho",
-    unlockRequirement: "Gratuito",
+    label: "Bird",
+    unlockRequirement: "Free",
     isUnlocked: () => true,
     page: 1
   },
   {
     type: "tennis",
     label: "Tennis",
-    unlockRequirement: "60 pontos (normal)",
+    unlockRequirement: "60 points (normal)",
     isUnlocked: (stats) => stats.bestScore >= 60,
     page: 1
   },
@@ -118,7 +118,7 @@ export const CHARACTERS: CharacterInfo[] = [
   },
   {
     type: "soccer",
-    label: "Futebol",
+    label: "Soccer",
     unlockRequirement: "700 flaps total",
     isUnlocked: (stats) => stats.totalFlaps >= 700,
     page: 1
@@ -126,29 +126,29 @@ export const CHARACTERS: CharacterInfo[] = [
   // Page 2
   {
     type: "fireball",
-    label: "Bola de Fogo",
-    unlockRequirement: "40 pontos (hardcore)",
+    label: "Fireball",
+    unlockRequirement: "40 points (hardcore)",
     isUnlocked: (stats) => stats.bestHardcoreScore >= 40,
     page: 2
   },
   {
     type: "smiley",
     label: "Smiley",
-    unlockRequirement: "1 partida online",
+    unlockRequirement: "1 online match",
     isUnlocked: (stats) => stats.onlineMatchesPlayed >= 1,
     page: 2
   },
   {
     type: "golf",
     label: "Golf",
-    unlockRequirement: "10 partidas online",
+    unlockRequirement: "10 online matches",
     isUnlocked: (stats) => stats.onlineMatchesPlayed >= 10,
     page: 2
   },
   {
     type: "birdglasses",
     label: "Bird Style",
-    unlockRequirement: "20 vitórias online",
+    unlockRequirement: "20 online wins",
     isUnlocked: (stats) => stats.onlineMatchesWon >= 20,
     page: 2
   }

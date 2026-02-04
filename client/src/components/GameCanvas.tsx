@@ -252,13 +252,13 @@ export function GameCanvas({
     const capOverhang = 8;
 
     const pipeGradient = ctx.createLinearGradient(x, 0, x + width, 0);
-    pipeGradient.addColorStop(0, "#3d7a22");
-    pipeGradient.addColorStop(0.2, "#5cb336");
-    pipeGradient.addColorStop(0.4, "#7dd650");
-    pipeGradient.addColorStop(0.5, "#8ae85c");
-    pipeGradient.addColorStop(0.6, "#7dd650");
-    pipeGradient.addColorStop(0.8, "#5cb336");
-    pipeGradient.addColorStop(1, "#3d7a22");
+    pipeGradient.addColorStop(0, "#2ea60f");
+    pipeGradient.addColorStop(0.18, "#58d81b");
+    pipeGradient.addColorStop(0.4, "#9aff2b");
+    pipeGradient.addColorStop(0.5, "#c7ff4b");
+    pipeGradient.addColorStop(0.6, "#9aff2b");
+    pipeGradient.addColorStop(0.82, "#58d81b");
+    pipeGradient.addColorStop(1, "#2ea60f");
 
     ctx.fillStyle = pipeGradient;
     if (isTop) {
@@ -268,13 +268,13 @@ export function GameCanvas({
     }
 
     const capGradient = ctx.createLinearGradient(x - capOverhang, 0, x + width + capOverhang, 0);
-    capGradient.addColorStop(0, "#2d6018");
-    capGradient.addColorStop(0.15, "#4a9c2a");
-    capGradient.addColorStop(0.35, "#6abf40");
-    capGradient.addColorStop(0.5, "#8cd660");
-    capGradient.addColorStop(0.65, "#6abf40");
-    capGradient.addColorStop(0.85, "#4a9c2a");
-    capGradient.addColorStop(1, "#2d6018");
+    capGradient.addColorStop(0, "#1e7d0c");
+    capGradient.addColorStop(0.16, "#3fbf16");
+    capGradient.addColorStop(0.38, "#86f226");
+    capGradient.addColorStop(0.5, "#d7ff59");
+    capGradient.addColorStop(0.62, "#86f226");
+    capGradient.addColorStop(0.84, "#3fbf16");
+    capGradient.addColorStop(1, "#1e7d0c");
 
     ctx.fillStyle = capGradient;
     if (isTop) {
@@ -792,7 +792,7 @@ export function GameCanvas({
         {!isMultiplayer && !isPlaying && !isGameOver && !showCharacterSelect && (
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
             <GlossyButton onClick={() => startGame(false)} data-testid="button-start-game">
-              <Play className="w-6 h-6" /> Jogar
+              <Play className="w-6 h-6" /> Play
             </GlossyButton>
             <motion.button
               whileHover={{ scale: 1.03 }}
@@ -810,10 +810,10 @@ export function GameCanvas({
               <Flame className="w-5 h-5" /> HARDCORE MODE
             </motion.button>
             <GlossyButton onClick={() => setShowCharacterSelect(true)} data-testid="button-character">
-              <Settings className="w-5 h-5" /> Personagem
+              <Settings className="w-5 h-5" /> Character
             </GlossyButton>
             <button onClick={onExit} className="text-white hover:underline mt-2 font-bold drop-shadow-md" data-testid="button-back-menu">
-              Voltar ao Menu
+              Back to Menu
             </button>
           </div>
         )}
@@ -827,9 +827,9 @@ export function GameCanvas({
               className="absolute inset-0 bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-4"
             >
               <h2 className="text-2xl font-display font-black text-white drop-shadow-lg mb-2">
-                Escolha seu Personagem
+                Choose your Character
               </h2>
-              <p className="text-white/70 text-sm mb-4">Página {characterPage}/2</p>
+              <p className="text-white/70 text-sm mb-4">Page {characterPage}/2</p>
               
               <div className="flex items-center gap-2 mb-4">
                 <button
@@ -877,7 +877,7 @@ export function GameCanvas({
                       )}
                       <div className="font-bold">{opt.label}</div>
                       <div className="text-xs mt-1 opacity-70">
-                        {isUnlocked ? "Desbloqueado" : opt.unlockRequirement}
+                        {isUnlocked ? "Unlocked" : opt.unlockRequirement}
                       </div>
                     </motion.button>
                   );
@@ -885,11 +885,11 @@ export function GameCanvas({
               </div>
               
               <div className="text-white/60 text-xs mb-4 text-center">
-                Flaps: {playerStats.totalFlaps} | Recorde: {playerStats.bestScore} | Hardcore: {playerStats.bestHardcoreScore}
+                Flaps: {playerStats.totalFlaps} | Best: {playerStats.bestScore} | Hardcore: {playerStats.bestHardcoreScore}
               </div>
               
               <GlossyButton onClick={() => setShowCharacterSelect(false)} data-testid="button-back-character">
-                Voltar
+                Back
               </GlossyButton>
             </motion.div>
           )}
@@ -898,7 +898,7 @@ export function GameCanvas({
         {isGameOver && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
             <h2 className="text-4xl font-display font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] mb-2 transform -rotate-2">
-              FIM DE JOGO
+              GAME OVER
             </h2>
             {isHardcore && (
               <span className="text-red-400 font-bold text-sm mb-2 flex items-center gap-1">
@@ -906,16 +906,16 @@ export function GameCanvas({
               </span>
             )}
             <p className="text-2xl text-white font-bold mb-2 drop-shadow-md">
-              Pontos: {score}
+              Score: {score}
             </p>
             <p className="text-white/70 text-sm mb-6">
               Flaps: {sessionFlaps}
             </p>
             <GlossyButton onClick={() => startGame(isHardcore)} className="mb-4" data-testid="button-try-again">
-              <RotateCcw className="w-5 h-5" /> Tentar de Novo
+              <RotateCcw className="w-5 h-5" /> Try Again
             </GlossyButton>
             <button onClick={onExit} className="text-white font-bold hover:underline mt-2 drop-shadow-md" data-testid="button-exit">
-              Sair
+              Exit
             </button>
           </div>
         )}

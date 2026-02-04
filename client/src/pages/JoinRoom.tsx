@@ -39,7 +39,7 @@ export default function JoinRoom() {
             </h2>
             
             <GlossyButton onClick={() => setLocation(`/online/game/${joinedRoom.code}`)} className="w-full text-xl py-6">
-              Entrar na Sala
+              Enter Room
             </GlossyButton>
 
             <GlossyButton onClick={() => setLocation("/")} className="w-full opacity-50">

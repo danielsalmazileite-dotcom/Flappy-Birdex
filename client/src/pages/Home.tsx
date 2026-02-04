@@ -56,21 +56,21 @@ export default function Home() {
         
         {showStats ? (
           <div className="w-full text-left space-y-2 mb-6 bg-white/30 p-4 rounded-xl">
-            <h3 className="font-bold text-sky-950 mb-2">Suas Estatísticas</h3>
+            <h3 className="font-bold text-sky-950 mb-2">Your Stats</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Flaps: <strong>{stats.totalFlaps}</strong></div>
-              <div>Melhor (C): <strong>{stats.bestScore}</strong></div>
-              <div>Melhor (H): <strong>{stats.bestHardcoreScore}</strong></div>
+              <div>Best (C): <strong>{stats.bestScore}</strong></div>
+              <div>Best (H): <strong>{stats.bestHardcoreScore}</strong></div>
               <div>Online: <strong>{stats.onlineMatchesPlayed}</strong></div>
             </div>
 
             <div className="mt-5 pt-4 border-t border-white/40">
-              <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Conta</div>
+              <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Account</div>
               {!isReady ? (
-                <div className="text-xs text-sky-900 font-bold">Carregando conta...</div>
+                <div className="text-xs text-sky-900 font-bold">Loading account...</div>
               ) : user ? (
                 <div className="space-y-2">
-                  <div className="text-sm font-bold text-sky-950">Logado</div>
+                  <div className="text-sm font-bold text-sky-950">Signed in</div>
                   <div className="text-xs text-sky-900 font-bold break-all">{user.email}</div>
                   <button
                     onClick={async () => {
@@ -79,14 +79,14 @@ export default function Home() {
                         setAuthInfo(null);
                         const remote = await fetchCloudProgress();
                         if (!remote) {
-                          setAuthError("Sem dados salvos na nuvem.");
+                          setAuthError("No cloud data found.");
                           return;
                         }
                         applyProgressToLocalStorage(remote);
-                        setAuthInfo("Stats carregados da conta!");
+                        setAuthInfo("Progress loaded from your account!");
                         window.location.reload();
                       } catch (e: any) {
-                        setAuthError(e?.message || "Erro ao carregar");
+                        setAuthError(e?.message || "Failed to load");
                       }
                     }}
                     className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
@@ -104,14 +104,14 @@ export default function Home() {
                           ...local,
                           updatedAt: local.updatedAt || now,
                         });
-                        setAuthInfo("Stats salvos na conta!");
+                        setAuthInfo("Progress saved to your account!");
                       } catch (e: any) {
-                        setAuthError(e?.message || "Erro ao salvar");
+                        setAuthError(e?.message || "Failed to save");
                       }
                     }}
                     className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
                   >
-                    Salvar stats
+                    Save progress
                   </button>
                   <button
                     onClick={() => {
@@ -119,7 +119,7 @@ export default function Home() {
                     }}
                     className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
                   >
-                    Sair
+                    Sign out
                   </button>
                 </div>
               ) : (
@@ -137,7 +137,7 @@ export default function Home() {
                         }}
                         className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
                       >
-                        Criar conta
+                        Create account
                       </button>
                       <button
                         onClick={() => {
@@ -147,7 +147,7 @@ export default function Home() {
                         }}
                         className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
                       >
-                        Entrar
+                        Sign in
                       </button>
                     </div>
                   ) : null}
@@ -158,7 +158,7 @@ export default function Home() {
                         value={authName}
                         onChange={(e) => setAuthName(e.target.value)}
                         className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/70 text-sky-950 font-bold outline-none focus:ring-2 focus:ring-sky-400"
-                        placeholder="Nome"
+                        placeholder="Name"
                       />
                       <input
                         value={authEmail}
@@ -171,7 +171,7 @@ export default function Home() {
                         onChange={(e) => setAuthPassword(e.target.value)}
                         type="password"
                         className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/70 text-sky-950 font-bold outline-none focus:ring-2 focus:ring-sky-400"
-                        placeholder="Senha (mín. 6)"
+                        placeholder="Password (min. 6)"
                       />
                       <button
                         onClick={async () => {
@@ -180,14 +180,14 @@ export default function Home() {
                             setAuthInfo(null);
                             await register(authName, authEmail, authPassword);
                             setAuthMode("none");
-                            setAuthInfo("Conta criada e logada!");
+                            setAuthInfo("Account created and signed in!");
                           } catch (e: any) {
                             setAuthError(e?.message || "Erro");
                           }
                         }}
                         className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
                       >
-                        Criar conta
+                        Create account
                       </button>
                       <button
                         onClick={() => {
@@ -195,7 +195,7 @@ export default function Home() {
                         }}
                         className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
                       >
-                        Voltar
+                        Back
                       </button>
                     </div>
                   ) : null}
@@ -213,7 +213,7 @@ export default function Home() {
                         onChange={(e) => setAuthPassword(e.target.value)}
                         type="password"
                         className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/70 text-sky-950 font-bold outline-none focus:ring-2 focus:ring-sky-400"
-                        placeholder="Senha"
+                        placeholder="Password"
                       />
                       <button
                         onClick={async () => {
@@ -222,14 +222,14 @@ export default function Home() {
                             setAuthInfo(null);
                             await login(authEmail, authPassword);
                             setAuthMode("none");
-                            setAuthInfo("Logado!");
+                            setAuthInfo("Signed in!");
                           } catch (e: any) {
                             setAuthError(e?.message || "Erro");
                           }
                         }}
                         className="w-full rounded-xl bg-sky-600 text-white font-black py-2 hover:bg-sky-700 transition-colors"
                       >
-                        Entrar
+                        Sign in
                       </button>
                       <button
                         onClick={() => {
@@ -237,7 +237,7 @@ export default function Home() {
                         }}
                         className="w-full rounded-xl bg-white/60 border border-white/70 text-sky-950 font-black py-2 hover:bg-white/70 transition-colors"
                       >
-                        Voltar
+                        Back
                       </button>
                     </div>
                   ) : null}
@@ -251,7 +251,7 @@ export default function Home() {
               className="flex flex-col items-center gap-2 p-4 bg-white/30 rounded-xl border border-white/50 relative cursor-pointer hover:bg-white/40 transition-colors"
               onClick={() => setShowCharacterSelect(!showCharacterSelect)}
             >
-              <span className="text-sm font-bold text-sky-900 uppercase tracking-wider">Personagem Atual</span>
+              <span className="text-sm font-bold text-sky-900 uppercase tracking-wider">Current Character</span>
               <span className="text-xl font-black text-sky-950">{CHARACTERS.find(c => c.type === character)?.label}</span>
             </div>
 
@@ -285,13 +285,13 @@ export default function Home() {
         <div className="w-full flex flex-col gap-4">
           <Link href="/play" className="w-full block">
             <GlossyButton className="w-full md:w-full min-w-0 text-xl py-6" data-testid="button-play">
-              <Gamepad2 className="w-6 h-6" /> Jogar Solo
+              <Gamepad2 className="w-6 h-6" /> Solo Play
             </GlossyButton>
           </Link>
           
           <Link href="/online" className="w-full block">
             <GlossyButton className="w-full md:w-full min-w-0 text-xl py-6" data-testid="button-online">
-              <Globe className="w-6 h-6" /> Partida Online
+              <Globe className="w-6 h-6" /> Online Match
             </GlossyButton>
           </Link>
         </div>

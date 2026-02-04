@@ -79,6 +79,12 @@
     background: #a8ddff;
   }
 
+  body.online-mode {
+    background:
+      radial-gradient(1200px 700px at 50% -10%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 55%),
+      linear-gradient(180deg, #e8f9ff 0%, #9be7ff 42%, #51c8ff 72%, #8fe3ff 100%);
+  }
+
   b, strong {
     font-weight: 500;
   }

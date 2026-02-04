@@ -41,6 +41,14 @@ function MenuBackground() {
   }, [show]);
 
   useEffect(() => {
+    const body = document.body;
+    const isOnlineMatch = location.startsWith("/online/game");
+    if (isOnlineMatch) body.classList.add("online-mode");
+    else body.classList.remove("online-mode");
+    return () => body.classList.remove("online-mode");
+  }, [location]);
+
+  useEffect(() => {
     if (!show) return;
     const canvas = bgCanvasRef.current;
     if (!canvas) return;
@@ -363,14 +371,14 @@ function MenuMusic() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative w-full max-w-sm rounded-2xl border border-white/40 bg-white/70 backdrop-blur-md p-5 text-center">
-        <div className="text-sky-950 font-black text-lg">Ativar som?</div>
-        <div className="text-sky-900 font-bold text-sm mt-1">O navegador precisa de uma interação para tocar música.</div>
+        <div className="text-sky-950 font-black text-lg">Enable sound?</div>
+        <div className="text-sky-900 font-bold text-sm mt-1">Your browser needs an interaction to play music.</div>
         <div className="mt-4 flex flex-col gap-2">
           <button
             onClick={startNow}
             className="w-full rounded-xl bg-sky-600 text-white font-black py-3 hover:bg-sky-700 transition-colors"
           >
-            Ativar som
+            Enable sound
           </button>
         </div>
       </div>

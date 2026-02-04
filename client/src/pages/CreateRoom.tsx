@@ -81,7 +81,7 @@ export default function CreateRoom() {
             </div>
 
             <GlossyButton onClick={() => setLocation(`/online/game/${createdCode}`)} className="w-full text-xl py-6">
-              Entrar na Sala
+              Enter Room
             </GlossyButton>
 
             <GlossyButton onClick={() => setLocation("/")} className="w-full opacity-50">

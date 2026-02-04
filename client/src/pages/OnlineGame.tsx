@@ -20,7 +20,7 @@ export default function OnlineGame() {
   const [playerSlot, setPlayerSlot] = useState<number | null>(null);
   
   const character = (localStorage.getItem("flappi_selected_char") as CharacterType) || "bird";
-  const nickname = (localStorage.getItem("flappi_nickname") || "Jogador").trim() || "Jogador";
+  const nickname = (localStorage.getItem("flappi_nickname") || "Player").trim() || "Player";
 
   useEffect(() => {
     if (!code) return;
@@ -53,7 +53,7 @@ export default function OnlineGame() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "error" && data.reason === "nick_taken") {
-        const next = window.prompt("Esse nickname já está sendo usado nessa sala. Escolha outro:", nickname) || "";
+        const next = window.prompt("This nickname is already taken in this room. Choose another:", nickname) || "";
         const cleaned = next.trim().slice(0, 18);
         if (cleaned) {
           localStorage.setItem("flappi_nickname", cleaned);
@@ -167,18 +167,18 @@ export default function OnlineGame() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full text-center">
           <h2 className="text-3xl font-display font-black text-sky-950 mb-6 uppercase tracking-widest">
-            Partida Começando...
+            Match Starting...
           </h2>
           <div className="bg-white/40 p-6 rounded-2xl mb-6 border border-white/60">
             <p className="text-sky-900 font-bold mb-2 uppercase text-sm tracking-wider">
-              {readyCount}/{totalPlayers} jogadores prontos...
+              {readyCount}/{totalPlayers} players ready...
             </p>
             <div className="flex flex-col gap-2 mt-4">
               {players.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between bg-white/60 p-3 rounded-xl shadow-sm">
                   <span className="font-black text-sky-950">{p.nick}</span>
                   <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${p.ready ? "bg-sky-200 text-sky-900" : "bg-yellow-200 text-yellow-800"}`}>
-                    {p.ready ? "Pronto" : "Aguardando"}
+                    {p.ready ? "Ready" : "Waiting"}
                   </span>
                 </div>
               ))}
@@ -186,11 +186,11 @@ export default function OnlineGame() {
           </div>
 
           <GlossyButton onClick={() => handleReady(!isReady)} className="w-full text-xl py-6">
-            {isReady ? "CANCELAR" : "PRONTO!"}
+            {isReady ? "CANCEL" : "READY!"}
           </GlossyButton>
 
           <GlossyButton onClick={() => setLocation("/online")} className="w-full mt-4 opacity-50">
-            Sair da Sala
+            Leave Room
           </GlossyButton>
         </GlassCard>
       </div>
@@ -202,16 +202,16 @@ export default function OnlineGame() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full text-center">
           <h2 className="text-3xl font-display font-black text-sky-950 mb-6 uppercase tracking-widest">
-            Sala de Espera
+            Lobby
           </h2>
           <div className="bg-white/40 p-6 rounded-2xl mb-6 border border-white/60">
-            <p className="text-sky-900 font-bold mb-4 uppercase text-sm tracking-wider">Jogadores Conectados</p>
+            <p className="text-sky-900 font-bold mb-4 uppercase text-sm tracking-wider">Connected Players</p>
             <div className="flex flex-col gap-2">
               {players.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between bg-white/60 p-3 rounded-xl shadow-sm">
                   <span className="font-black text-sky-950">{p.nick}</span>
                   <span className="text-[10px] bg-sky-200 px-2 py-1 rounded-full font-bold text-sky-900 uppercase">
-                    {gameState.hostId && p.id === gameState.hostId ? "Líder" : "Jogador"}
+                    {gameState.hostId && p.id === gameState.hostId ? "Leader" : "Player"}
                   </span>
                 </div>
               ))}
@@ -220,16 +220,16 @@ export default function OnlineGame() {
 
           {isHost ? (
             <GlossyButton onClick={handleStart} className="w-full text-xl py-6" disabled={!wsReady}>
-              COMEÇAR JOGO
+              START GAME
             </GlossyButton>
           ) : (
             <div className="text-sky-900 font-bold animate-pulse uppercase tracking-tighter">
-              Aguardando o líder iniciar...
+              Waiting for the leader to start...
             </div>
           )}
 
           <GlossyButton onClick={() => setLocation("/online")} className="w-full mt-4 opacity-50">
-            Sair da Sala
+            Leave Room
           </GlossyButton>
         </GlassCard>
       </div>
@@ -251,18 +251,18 @@ export default function OnlineGame() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full text-center">
           <h2 className="text-3xl font-display font-black text-sky-950 mb-4 uppercase tracking-widest">
-            Rodada Finalizada
+            Round Over
           </h2>
           <p className="text-sky-900 font-bold mb-6">
-            Vencedor: {winner?.nick ?? "-"}
+            Winner: {winner?.nick ?? "-"}
           </p>
           {isHost && (
             <GlossyButton onClick={handleRestart} className="w-full text-xl py-6">
-              REINICIAR RODADA
+              RESTART ROUND
             </GlossyButton>
           )}
           <GlossyButton onClick={() => setLocation("/online")} className="w-full mt-4 opacity-50">
-            Sair
+            Exit
           </GlossyButton>
         </GlassCard>
       </div>
