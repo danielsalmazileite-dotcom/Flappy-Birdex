@@ -26,6 +26,8 @@ export default function Home() {
   const [character, setCharacter] = useState<CharacterType>(() => {
     return (localStorage.getItem("flappi_selected_char") as CharacterType) || "bird";
   });
+  const [birdColor, setBirdColor] = useState(() => localStorage.getItem("flappi_bird_color") || "#ffeb3b");
+  const [wingColor, setWingColor] = useState(() => localStorage.getItem("flappi_wing_color") || "#ffffff");
   const [stats] = useState(getPlayerStats());
   const [showStats, setShowStats] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
@@ -40,6 +42,16 @@ export default function Home() {
     localStorage.setItem("flappi_selected_char", character);
     touchLocalProgressUpdatedAt();
   }, [character]);
+
+  useEffect(() => {
+    localStorage.setItem("flappi_bird_color", birdColor);
+    touchLocalProgressUpdatedAt();
+  }, [birdColor]);
+
+  useEffect(() => {
+    localStorage.setItem("flappi_wing_color", wingColor);
+    touchLocalProgressUpdatedAt();
+  }, [wingColor]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -253,6 +265,27 @@ export default function Home() {
             >
               <span className="text-sm font-bold text-sky-900 uppercase tracking-wider">Current Character</span>
               <span className="text-xl font-black text-sky-950">{CHARACTERS.find(c => c.type === character)?.label}</span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Bird Color</div>
+                <input
+                  type="color"
+                  value={birdColor}
+                  onChange={(e) => setBirdColor(e.target.value)}
+                  className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                />
+              </div>
+              <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Wing Color</div>
+                <input
+                  type="color"
+                  value={wingColor}
+                  onChange={(e) => setWingColor(e.target.value)}
+                  className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                />
+              </div>
             </div>
 
             {showCharacterSelect && (

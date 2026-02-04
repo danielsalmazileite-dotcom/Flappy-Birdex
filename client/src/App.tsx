@@ -336,31 +336,16 @@ function MenuMusic() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const isMenu = location === "/" || location.startsWith("/online");
-    const isInMatch = location.startsWith("/online/game");
-    const shouldPlay = isMenu && !isInMatch;
-
-    // Try to autoplay muted while on Home (allowed in most browsers)
-    if (shouldPlay && !unlocked) {
+    // Try to autoplay muted on any route (allowed in most browsers)
+    if (!unlocked) {
       audio.muted = true;
       audio.play().catch(() => {});
-    }
-
-    if (!unlocked) {
-      // Can't autoplay; wait for first user interaction.
-      if (!shouldPlay) {
-        audio.pause();
-      }
       return;
     }
 
-    if (shouldPlay) {
-      audio.muted = false;
-      audio.play().catch(() => {});
-    } else {
-      // Pause but keep currentTime so it resumes where it stopped.
-      audio.pause();
-    }
+    // Once unlocked, keep the same track playing continuously across the app.
+    audio.muted = false;
+    audio.play().catch(() => {});
   }, [location, unlocked, soundPref]);
 
   const shouldPrompt = !unlocked && soundPref === "ask" && (location === "/" || location.startsWith("/online"));

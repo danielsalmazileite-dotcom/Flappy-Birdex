@@ -53,34 +53,31 @@ export function GameCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const backgroundImageRef = useRef<HTMLImageElement | null>(null);
-  const normalMusicRef = useRef<HTMLAudioElement | null>(null);
-  const hardcoreMusicRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [score, setScore] = useState(0);
-  const [character, setCharacter] = useState<CharacterType>("bird");
+  const [character, setCharacter] = useState<CharacterType>(() => {
+    return (localStorage.getItem("flappi_selected_char") as CharacterType) || "bird";
+  });
   const [canvasSize, setCanvasSize] = useState({ width: 360, height: 640 });
   const [isHardcore, setIsHardcore] = useState(false);
   const [characterPage, setCharacterPage] = useState(1);
   const [playerStats, setPlayerStats] = useState<PlayerStats>(getPlayerStats());
   const [sessionFlaps, setSessionFlaps] = useState(0);
   const fireAnimationRef = useRef(0);
+  const [birdColor, setBirdColor] = useState<string>(() => localStorage.getItem("flappi_bird_color") || "#ffeb3b");
+  const [wingColor, setWingColor] = useState<string>(() => localStorage.getItem("flappi_wing_color") || "#ffffff");
 
-  // Load audio files
   useEffect(() => {
-    normalMusicRef.current = new Audio("/audio/jumper.mp3");
-    normalMusicRef.current.loop = true;
-    normalMusicRef.current.volume = 0.5;
-    
-    hardcoreMusicRef.current = new Audio("/audio/deadlocked.mp3");
-    hardcoreMusicRef.current.loop = true;
-    hardcoreMusicRef.current.volume = 0.6;
-    
-    return () => {
-      normalMusicRef.current?.pause();
-      hardcoreMusicRef.current?.pause();
-    };
+    localStorage.setItem("flappi_selected_char", character);
+  }, [character]);
+
+  useEffect(() => {
+    const c = localStorage.getItem("flappi_bird_color");
+    const w = localStorage.getItem("flappi_wing_color");
+    if (c) setBirdColor(c);
+    if (w) setWingColor(w);
   }, []);
 
   const PIPE_WIDTH = 60;
@@ -141,25 +138,13 @@ export function GameCanvas({
     };
   }, []);
 
-  const stopAllMusic = () => {
-    normalMusicRef.current?.pause();
-    hardcoreMusicRef.current?.pause();
-    if (normalMusicRef.current) normalMusicRef.current.currentTime = 0;
-    if (hardcoreMusicRef.current) hardcoreMusicRef.current.currentTime = 0;
-  };
+  const stopAllMusic = () => {};
 
   const startGame = (hardcoreMode: boolean) => {
     setIsHardcore(hardcoreMode);
     // Hardcore mode is slightly slower now: speed 6 vs original 8
     const speed = hardcoreMode ? 6 : 3;
-    
-    // Start appropriate music
     stopAllMusic();
-    if (hardcoreMode) {
-      hardcoreMusicRef.current?.play().catch(() => {});
-    } else {
-      normalMusicRef.current?.play().catch(() => {});
-    }
     
     gameState.current = {
       birdY: canvasSize.height / 2,
@@ -302,12 +287,35 @@ export function GameCanvas({
     ctx.rotate(rotation);
     
     // Character Body first
+    const hexToRgb = (hex: string) => {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!m) return null;
+      return { r: parseInt(m[1]!, 16), g: parseInt(m[2]!, 16), b: parseInt(m[3]!, 16) };
+    };
+    const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+    const rgbToHex = (r: number, g: number, b: number) =>
+      `#${clamp255(r).toString(16).padStart(2, "0")}${clamp255(g).toString(16).padStart(2, "0")}${clamp255(b).toString(16).padStart(2, "0")}`;
+    const mix = (a: string, b: string, t: number) => {
+      const ra = hexToRgb(a);
+      const rb = hexToRgb(b);
+      if (!ra || !rb) return a;
+      return rgbToHex(
+        ra.r + (rb.r - ra.r) * t,
+        ra.g + (rb.g - ra.g) * t,
+        ra.b + (rb.b - ra.b) * t,
+      );
+    };
+
     if (type === "bird" || type === "birdglasses") {
+      const main = birdColor;
+      const light = mix(main, "#ffffff", 0.55);
+      const dark = mix(main, "#000000", 0.2);
+      const stroke = mix(main, "#000000", 0.45);
       const baseBird = {
-        light: "#fff8b3",
-        main: "#ffeb3b",
-        dark: "#ffc107",
-        stroke: "#e65100",
+        light,
+        main,
+        dark,
+        stroke,
         shadow: "rgba(255,200,0,0.5)",
       };
 
@@ -527,7 +535,7 @@ export function GameCanvas({
       const wingFrame = Math.floor(frame / 5) % 3;
       const wingRotation = wingFrame === 0 ? -0.3 : (wingFrame === 1 ? 0 : 0.3);
       
-      ctx.fillStyle = "white";
+      ctx.fillStyle = wingColor;
       ctx.strokeStyle = "black";
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
@@ -570,7 +578,7 @@ export function GameCanvas({
     }
     
     ctx.restore();
-  }, [canvasSize.width]);
+  }, [birdColor, canvasSize.width, wingColor]);
 
   const loop = useCallback(() => {
     const canvas = canvasRef.current;
