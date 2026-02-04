@@ -28,6 +28,9 @@ export default function Home() {
   });
   const [birdColor, setBirdColor] = useState(() => localStorage.getItem("flappi_bird_color") || "#ffeb3b");
   const [wingColor, setWingColor] = useState(() => localStorage.getItem("flappi_wing_color") || "#ffffff");
+  const [eyeColor, setEyeColor] = useState(() => localStorage.getItem("flappi_eye_color") || "#ffffff");
+  const [pupilColor, setPupilColor] = useState(() => localStorage.getItem("flappi_pupil_color") || "#000000");
+  const [beakColor, setBeakColor] = useState(() => localStorage.getItem("flappi_beak_color") || "#ff5722");
   const [stats] = useState(getPlayerStats());
   const [showStats, setShowStats] = useState(false);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
@@ -52,6 +55,21 @@ export default function Home() {
     localStorage.setItem("flappi_wing_color", wingColor);
     touchLocalProgressUpdatedAt();
   }, [wingColor]);
+
+  useEffect(() => {
+    localStorage.setItem("flappi_eye_color", eyeColor);
+    touchLocalProgressUpdatedAt();
+  }, [eyeColor]);
+
+  useEffect(() => {
+    localStorage.setItem("flappi_pupil_color", pupilColor);
+    touchLocalProgressUpdatedAt();
+  }, [pupilColor]);
+
+  useEffect(() => {
+    localStorage.setItem("flappi_beak_color", beakColor);
+    touchLocalProgressUpdatedAt();
+  }, [beakColor]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -267,26 +285,55 @@ export default function Home() {
               <span className="text-xl font-black text-sky-950">{CHARACTERS.find(c => c.type === character)?.label}</span>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Bird Color</div>
-                <input
-                  type="color"
-                  value={birdColor}
-                  onChange={(e) => setBirdColor(e.target.value)}
-                  className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                />
+            {(character === "bird" || character === "birdglasses") && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Bird Color</div>
+                  <input
+                    type="color"
+                    value={birdColor}
+                    onChange={(e) => setBirdColor(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                  />
+                </div>
+                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Wing Color</div>
+                  <input
+                    type="color"
+                    value={wingColor}
+                    onChange={(e) => setWingColor(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                  />
+                </div>
+                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Eye Color</div>
+                  <input
+                    type="color"
+                    value={eyeColor}
+                    onChange={(e) => setEyeColor(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                  />
+                </div>
+                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Pupil Color</div>
+                  <input
+                    type="color"
+                    value={pupilColor}
+                    onChange={(e) => setPupilColor(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                  />
+                </div>
+                <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
+                  <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Beak Color</div>
+                  <input
+                    type="color"
+                    value={beakColor}
+                    onChange={(e) => setBeakColor(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
+                  />
+                </div>
               </div>
-              <div className="bg-white/30 rounded-xl border border-white/50 p-3 text-left">
-                <div className="text-xs font-black uppercase tracking-wide text-sky-900 mb-2">Wing Color</div>
-                <input
-                  type="color"
-                  value={wingColor}
-                  onChange={(e) => setWingColor(e.target.value)}
-                  className="w-full h-10 rounded-lg bg-white/60 border border-white/70"
-                />
-              </div>
-            </div>
+            )}
 
             {showCharacterSelect && (
               <div className="w-full grid grid-cols-2 gap-2 mt-4">

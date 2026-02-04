@@ -68,6 +68,9 @@ export function GameCanvas({
   const fireAnimationRef = useRef(0);
   const [birdColor, setBirdColor] = useState<string>(() => localStorage.getItem("flappi_bird_color") || "#ffeb3b");
   const [wingColor, setWingColor] = useState<string>(() => localStorage.getItem("flappi_wing_color") || "#ffffff");
+  const [eyeColor, setEyeColor] = useState<string>(() => localStorage.getItem("flappi_eye_color") || "#ffffff");
+  const [pupilColor, setPupilColor] = useState<string>(() => localStorage.getItem("flappi_pupil_color") || "#000000");
+  const [beakColor, setBeakColor] = useState<string>(() => localStorage.getItem("flappi_beak_color") || "#ff5722");
 
   useEffect(() => {
     localStorage.setItem("flappi_selected_char", character);
@@ -76,8 +79,14 @@ export function GameCanvas({
   useEffect(() => {
     const c = localStorage.getItem("flappi_bird_color");
     const w = localStorage.getItem("flappi_wing_color");
+    const e = localStorage.getItem("flappi_eye_color");
+    const p = localStorage.getItem("flappi_pupil_color");
+    const b = localStorage.getItem("flappi_beak_color");
     if (c) setBirdColor(c);
     if (w) setWingColor(w);
+    if (e) setEyeColor(e);
+    if (p) setPupilColor(p);
+    if (b) setBeakColor(b);
   }, []);
 
   const PIPE_WIDTH = 60;
@@ -345,15 +354,15 @@ export function GameCanvas({
       if (type === "bird") {
         ctx.beginPath();
         ctx.arc(8, -5, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "white";
+        ctx.fillStyle = eyeColor;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(10, -5, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "black";
+        ctx.fillStyle = pupilColor;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(11, -6, 1, 0, Math.PI * 2);
-        ctx.fillStyle = "white";
+        ctx.fillStyle = mix(eyeColor, "#ffffff", 0.6);
         ctx.fill();
       } else {
         // Sunglasses
@@ -381,7 +390,7 @@ export function GameCanvas({
       ctx.moveTo(14, 2);
       ctx.lineTo(26, 5);
       ctx.lineTo(14, 10);
-      ctx.fillStyle = "#ff5722";
+      ctx.fillStyle = beakColor;
       ctx.fill();
       ctx.lineWidth = 1;
     } else if (type === "baseball") {
@@ -578,7 +587,7 @@ export function GameCanvas({
     }
     
     ctx.restore();
-  }, [birdColor, canvasSize.width, wingColor]);
+  }, [beakColor, birdColor, canvasSize.width, eyeColor, pupilColor, wingColor]);
 
   const loop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -634,10 +643,6 @@ export function GameCanvas({
     }
 
     if (gameState.current.isGameRunning) {
-      if (isMultiplayer && isSpectating) {
-        gameState.current.isGameRunning = false;
-      }
-
       gameState.current.velocity += gameState.current.gravity * dtScale;
       gameState.current.birdY += gameState.current.velocity * dtScale;
 
