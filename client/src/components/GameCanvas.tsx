@@ -111,6 +111,12 @@ export function GameCanvas({
   const lastSentAtRef = useRef<number>(0);
   const spawnedPipesRef = useRef<number>(0);
   const remoteMotionRef = useRef(new Map<string, { lastY: number; velocity: number }>());
+  const remoteNetRef = useRef(
+    new Map<
+      string,
+      { lastNetY: number; lastNetAt: number; simY: number; simV: number; falling: boolean }
+    >(),
+  );
   const sentDeadRef = useRef(false);
   const startTimerRef = useRef<number | null>(null);
 
@@ -146,6 +152,52 @@ export function GameCanvas({
       backgroundImageRef.current = img;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMultiplayer) return;
+    if (!remotePlayers) return;
+
+    const nowMs = Date.now();
+    const net = remoteNetRef.current;
+    const seen = new Set<string>();
+
+    remotePlayers.forEach((p) => {
+      seen.add(p.id);
+      const existing = net.get(p.id);
+      if (!existing) {
+        net.set(p.id, {
+          lastNetY: p.y,
+          lastNetAt: nowMs,
+          simY: p.y,
+          simV: 0,
+          falling: false,
+        });
+        return;
+      }
+
+      if (p.alive === false) {
+        existing.lastNetY = p.y;
+        existing.lastNetAt = nowMs;
+        existing.simY = p.y;
+        existing.simV = 0;
+        existing.falling = false;
+        return;
+      }
+
+      if (p.y !== existing.lastNetY) {
+        existing.lastNetY = p.y;
+        existing.lastNetAt = nowMs;
+        existing.simY = p.y;
+        existing.simV = 0;
+        existing.falling = false;
+      }
+    });
+
+    // Clean up entries for players no longer present
+    Array.from(net.keys()).forEach((id) => {
+      if (!seen.has(id)) net.delete(id);
+    });
+  }, [isMultiplayer, remotePlayers]);
 
   const stopAllMusic = () => {};
 
@@ -724,27 +776,43 @@ export function GameCanvas({
 
     // Render remote players
     if (isMultiplayer && remotePlayers) {
+      const STALE_MS = 80;
+      const nowMs = Date.now();
       remotePlayers.forEach(p => {
         const remoteSlot = typeof p.slot === "number" ? p.slot : undefined;
         const remoteX = baseBirdX + ((remoteSlot ?? 1) - 1) * 18;
 
         const isAlive = p.alive !== false;
 
+        const net = remoteNetRef.current.get(p.id);
+        if (net && isAlive && nowMs - net.lastNetAt > STALE_MS) {
+          net.falling = true;
+        }
+
+        const remoteY = net && net.falling && isAlive ? net.simY : p.y;
+
         const mem = remoteMotionRef.current.get(p.id);
-        const prevY = mem ? mem.lastY : p.y;
-        const vel = isAlive ? (p.y - prevY) / Math.max(1, dtSecRaw * 60) : 0;
-        remoteMotionRef.current.set(p.id, { lastY: p.y, velocity: vel });
+        const prevY = mem ? mem.lastY : remoteY;
+        const vel = isAlive ? (remoteY - prevY) / Math.max(1, dtSecRaw * 60) : 0;
+        remoteMotionRef.current.set(p.id, { lastY: remoteY, velocity: vel });
+
+        if (net && net.falling && isAlive) {
+          net.simV += gameState.current.gravity * dtScale;
+          net.simY += net.simV * dtScale;
+        }
+
+        const isStaleFalling = Boolean(net && net.falling && isAlive);
         const remoteRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, vel * 0.08));
 
         ctx.save();
-        ctx.globalAlpha = isAlive ? 0.85 : 0.25;
-        drawCharacter(ctx, remoteX, p.y, p.char as CharacterType, fireAnimationRef.current, remoteRotation, remoteSlot);
+        ctx.globalAlpha = isAlive ? (isStaleFalling ? 0.35 : 0.85) : 0.25;
+        drawCharacter(ctx, remoteX, remoteY, p.char as CharacterType, fireAnimationRef.current, remoteRotation, remoteSlot);
         
         // Draw nickname
         ctx.fillStyle = "white";
         ctx.font = "12px 'Segoe UI Light'";
         ctx.textAlign = "center";
-        ctx.fillText(p.nick, remoteX, p.y - 30);
+        ctx.fillText(p.nick, remoteX, remoteY - 30);
         ctx.restore();
       });
     }
